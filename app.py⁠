@@ -1,0 +1,71 @@
+import streamlit as st
+import requests
+
+# 鼠鼠的专属 API Key 已经填好啦
+API_KEY = "/DzhuRVdjac0sJ4T8n1ODQ==xSqY0SULwzD8wphn"
+
+def get_food_nutrition(food_name_cn, weight_g):
+    trans_url = f"https://api.mymemory.translated.net/get?q={food_name_cn}&langpair=zh|en"
+    try:
+        trans_res = requests.get(trans_url).json()
+        food_name_en = trans_res['responseData']['translatedText']
+    except Exception:
+        return None
+
+    query = f"{weight_g}g {food_name_en}"
+    nutrition_url = f"https://api.calorieninjas.com/v1/nutrition?query={query}"
+    headers = {'X-Api-Key': API_KEY}
+    
+    try:
+        nutri_res = requests.get(nutrition_url, headers=headers)
+        if nutri_res.status_code == 200 and nutri_res.json()['items']:
+            return nutri_res.json()['items'][0]
+    except Exception:
+        return None
+    return None
+
+# 网页标题和温馨提示
+st.set_page_config(page_title="鼠鼠营养追踪器", page_icon="🐹")
+st.title("🐹 鼠鼠的专属营养追踪器")
+st.write("距离 60kg 目标更近一步！吃饱了才有力气猛蹬椭圆机呀~")
+
+# 准备小账本记录当天总摄入 (使用 session_state 保存网页状态)
+if 'history' not in st.session_state:
+    st.session_state.history = []
+    st.session_state.total_cal = 0.0
+    st.session_state.total_pro = 0.0
+    st.session_state.total_carb = 0.0
+    st.session_state.total_fat = 0.0
+
+# 左右两列输入框
+col1, col2 = st.columns(2)
+with col1:
+    food_name = st.text_input("今天吃了什么好吃的？", placeholder="比如：牛肉")
+with col2:
+    weight_input = st.number_input("吃了多少克？", min_value=1, value=100)
+
+# 点击按钮开始查询
+if st.button("记下来！", type="primary"):
+    if food_name:
+        with st.spinner(f"正在努力查询 {food_name} 的数据..."):
+            nutri = get_food_nutrition(food_name, weight_input)
+            if nutri:
+                # 记录并累加
+                st.session_state.history.append(food_name)
+                st.session_state.total_cal += nutri['calories']
+                st.session_state.total_pro += nutri['protein_g']
+                st.session_state.total_carb += nutri['carbohydrates_total_g']
+                st.session_state.total_fat += nutri['fat_total_g']
+                st.success(f"✅ 记下来啦！{weight_input}g {food_name} 含有 {nutri['calories']:.1f} 大卡热量。")
+            else:
+                st.error("🤔 词库里找不到这个呢，换个简单的食材名字试试？")
+
+st.markdown("---")
+st.subheader("📊 鼠鼠今天的总摄入大公开")
+
+# 漂亮的四个数据面板
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("🔥 总热量 (kcal)", f"{st.session_state.total_cal:.1f}")
+m2.metric("🥩 总蛋白 (g)", f"{st.session_state.total_pro:.1f}")
+m3.metric("🍞 总碳水 (g)", f"{st.session_state.total_carb:.1f}")
+m4.metric("🧈 总脂肪 (g)", f"{st.session_state.total_fat:.1f}")
