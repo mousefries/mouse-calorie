@@ -23,7 +23,7 @@
         <h2>✨ AI 智能营养追踪器</h2>
         <p style="color: #888; font-size: 14px;">不用再辛苦算克数啦！随口一说，让 AI 营养师帮你搞定卡路里~</p>
         
-        <textarea id="foodInput" placeholder="今天吃了什么好吃的？比如：中午吃了一碗大份的麻辣烫，加了肥牛和方便面，还喝了半瓶冰可乐..."></textarea>
+        <textarea id="foodInput" placeholder="今天吃了什么好吃的？比如：中午吃了一碗大份的麻辣烫，加了肥牛和方便面..."></textarea>
         <br>
         <button onclick="analyzeFood()">✨ 让 AI 算一下</button>
         <div id="loading">🧠 AI 营养师正在努力计算中...</div>
@@ -41,14 +41,16 @@
     </div>
 
     <script>
-        // 👇 已经帮你强行改回纯正的小写 sk- 啦！
         const DEEPSEEK_API_KEY = "sk-77af62e87d2d4423b8f8a4a0a4a53760"; 
-        
         let totals = { cal: 0, pro: 0, car: 0, fat: 0 };
 
         async function analyzeFood() {
             const text = document.getElementById('foodInput').value;
-            if (!text) return alert("❌ 还没告诉我吃了什么呢！快输入一点美食吧~");
+            if (!text) {
+                document.getElementById('msg').innerHTML = "<span style='color:red'>❌ 还没告诉我吃了什么呢！</span>";
+                document.getElementById('msg').style.display = 'block';
+                return;
+            }
             
             document.getElementById('loading').style.display = 'block';
             document.getElementById('msg').style.display = 'none';
@@ -59,7 +61,8 @@
             {"cal": 120, "pro": 10.5, "car": 20, "fat": 5, "msg": "一句结合用户吃的食物的简短、可爱的鼓励语，语气要亲切自然，就像好朋友一样"}`;
 
             try {
-                const response = await fetch("https://api.deepseek.com/chat/completions", {
+                // 👇 看这里！换成了咱们的跑腿专线！完美绕过所有防火墙！
+                const response = await fetch("https://api.mousefries.top/chat/completions", {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -75,24 +78,17 @@
                     })
                 });
                 
-                // 🔍 自带听诊器：如果 API 拒绝了我们，直接抓出真实原因！
                 if (!response.ok) {
-                    if (response.status === 401) throw new Error("ERROR_401");
                     if (response.status === 402) throw new Error("ERROR_402");
                     throw new Error("ERROR_OTHER");
                 }
 
                 const data = await response.json();
                 let resultText = data.choices[0].message.content;
-                
                 resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(resultText);
 
-                totals.cal += result.cal;
-                totals.pro += result.pro;
-                totals.car += result.car;
-                totals.fat += result.fat;
-
+                totals.cal += result.cal; totals.pro += result.pro; totals.car += result.car; totals.fat += result.fat;
                 document.getElementById('tot-cal').innerText = totals.cal.toFixed(1);
                 document.getElementById('tot-pro').innerText = totals.pro.toFixed(1);
                 document.getElementById('tot-car').innerText = totals.car.toFixed(1);
@@ -102,11 +98,8 @@
                 document.getElementById('msg').style.display = 'block';
                 document.getElementById('foodInput').value = ''; 
             } catch (e) {
-                // 🚨 把病因明明白白地显示在网页上！
-                let errMsg = "🚧 遇到浏览器安全墙拦截 (CORS) 啦！";
-                if (e.message === "ERROR_401") errMsg = "❌ 报错 401：钥匙不对哦！是不是复制的时候多带了空格？";
-                else if (e.message === "ERROR_402") errMsg = "💸 报错 402：DeepSeek 账户里没钱啦！快去官网充 1 块钱！";
-                
+                let errMsg = "🚧 哎呀，网络通道堵车了！";
+                if (e.message === "ERROR_402") errMsg = "💸 DeepSeek 提醒：API 账户里没钱啦，去官网充1块钱吧！";
                 document.getElementById('msg').innerHTML = `<span style="color:red">${errMsg}</span>`;
                 document.getElementById('msg').style.display = 'block';
                 console.error(e);
