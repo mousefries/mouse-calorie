@@ -3,87 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鼠鼠营养追踪器</title>
+    <title>AI 智能营养追踪器</title>
     <style>
         body { font-family: 'PingFang SC', sans-serif; text-align: center; background-color: #f7f9fc; padding: 20px; color: #333; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); max-width: 500px; margin: 0 auto; }
         h2 { color: #ff8a65; }
-        .input-group { margin: 20px 0; }
-        input { padding: 12px; margin: 5px; border-radius: 10px; border: 1px solid #ddd; width: calc(40% - 20px); font-size: 16px; }
+        textarea { width: 90%; height: 80px; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; resize: none; font-family: inherit; }
         button { background: #ff8a65; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         button:active { background: #e67c5c; transform: scale(0.95); }
         .stats { display: flex; justify-content: space-around; margin-top: 25px; gap: 10px; }
         .stat-box { background: #fff3e0; padding: 15px 5px; border-radius: 15px; width: 23%; font-size: 14px; }
         .stat-val { font-size: 20px; font-weight: bold; color: #e65100; margin: 5px 0; display: block; }
-        #msg { margin-top: 15px; font-size: 14px; color: #666; min-height: 20px; }
+        #msg { margin-top: 15px; font-size: 15px; color: #ff8a65; font-weight: bold; min-height: 20px; background: #fff3e0; padding: 10px; border-radius: 10px; display: none; line-height: 1.5; }
+        #loading { color: #888; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🐹 鼠鼠的专属营养追踪器</h2>
-        <p style="color: #888; font-size: 14px;">距离目标更近一步！吃饱了才有力气猛蹬椭圆机呀~</p>
+        <h2>✨ AI 智能营养追踪器</h2>
+        <p style="color: #888; font-size: 14px;">不用再辛苦算克数啦！随口一说，让 AI 营养师帮你搞定卡路里~</p>
         
-        <div class="input-group">
-            <input type="text" id="food" placeholder="吃了啥？(如: 鸡腿)">
-            <input type="number" id="weight" placeholder="重量(克)" value="100">
-        </div>
-        
-        <button onclick="record()">📝 记下来！</button>
+        <textarea id="foodInput" placeholder="今天吃了什么好吃的？比如：中午吃了一碗大份的麻辣烫，加了肥牛和方便面，还喝了半瓶冰可乐..."></textarea>
+        <br>
+        <button onclick="analyzeFood()">✨ 让 AI 算一下</button>
+        <div id="loading">🧠 AI 营养师正在努力计算中...</div>
         <div id="msg"></div>
 
         <hr style="border: none; border-top: 1px dashed #eee; margin: 25px 0;">
-        <h3 style="color: #555; font-size: 16px;">📊 今天的总摄入大公开</h3>
-        
-        <div class="stats">
-            <div class="stat-box">🔥 热量<span class="stat-val" id="tot-cal">0</span>kcal</div>
-            <div class="stat-box">🥩 蛋白<span class="stat-val" id="tot-pro">0</span>g</div>
-            <div class="stat-box">🍞 碳水<span class="stat-val" id="tot-car">0</span>g</div>
-            <div class="stat-box">🧈 脂肪<span class="stat-val" id="tot-fat">0</span>g</div>
-        </div>
-    </div>
-
-    <script>
-        const API_KEY = "/DzhuRVdjac0sJ4T8n1ODQ==xSqY0SULwzD8wphn";
-        let totals = { cal: 0, pro: 0, car: 0, fat: 0 };
-
-        async function record() {
-            const food = document.getElementById('food').value;
-            const weight = document.getElementById('weight').value;
-            const msg = document.getElementById('msg');
-            
-            if (!food || !weight) return msg.innerHTML = "❌ 要填好食物和重量哦！";
-            msg.innerHTML = "🔄 正在努力帮鼠鼠查询...";
-
-            try {
-                let transRes = await fetch(`https://api.mymemory.translated.net/get?q=${food}&langpair=zh|en`);
-                let transData = await transRes.json();
-                let foodEn = transData.responseData.translatedText;
-
-                let nutriRes = await fetch(`https://api.calorieninjas.com/v1/nutrition?query=${weight}g ${foodEn}`, {
-                    headers: { 'X-Api-Key': API_KEY }
-                });
-                let nutriData = await nutriRes.json();
-
-                if (nutriData.items && nutriData.items.length > 0) {
-                    let item = nutriData.items[0];
-                    totals.cal += item.calories;
-                    totals.pro += item.protein_g;
-                    totals.car += item.carbohydrates_total_g;
-                    totals.fat += item.fat_total_g;
-
-                    document.getElementById('tot-cal').innerText = totals.cal.toFixed(1);
-                    document.getElementById('tot-pro').innerText = totals.pro.toFixed(1);
-                    document.getElementById('tot-car').innerText = totals.car.toFixed(1);
-                    document.getElementById('tot-fat').innerText = totals.fat.toFixed(1);
-
-                    msg.innerHTML = `✅ 记下来啦！${weight}g ${food} 含有 <b>${item.calories.toFixed(1)}</b> 大卡。`;
-                } else {
-                    msg.innerHTML = "🤔 词库里找不到这个食材呢，换个简单的名字试试？";
-                }
-            } catch (e) {
-                msg.innerHTML = "⚠️ 网络似乎出了点小差错，检查一下网络哦！";
-            }
-        }
-    </script>
-</body>
-</html>
+        <h3 style="color: #555; font-size: 16px
