@@ -5,191 +5,156 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="魔幻营养师">
-    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/notionists/svg?seed=mouse&backgroundColor=ff8a65">
-    <title>AI ✨ 魔幻营养追踪器</title>
+    <title>AI 营养追踪器</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* 🎨 魔幻配色与字体 */
+        /* 🍎 苹果原生字体与色彩规范 */
         :root {
-            --primary: #ff7a59; /* 活力珊瑚 */
-            --secondary: #7f56da; /* 梦幻紫 */
-            --accent: #ffeb3b; /* 闪耀黄 */
-            --text: #ffffff; /* 默认反白 */
-            --sub-text: rgba(255, 255, 255, 0.8);
-            --card-bg: rgba(255, 255, 255, 0.15); /* 玻璃 */
-            --input-bg: rgba(0, 0, 0, 0.3);
-            --box-bg: rgba(127, 86, 218, 0.2);
-            --border: rgba(255, 255, 255, 0.2);
+            --bg-grad-1: #2c1b4d;
+            --bg-grad-2: #1c1c38;
+            --primary: #FF3B30; /* iOS 红 */
+            --secondary: #5856D6; /* iOS 紫 */
+            --success: #34C759; /* iOS 绿 */
+            --warning: #FF9500; /* iOS 橙 */
+            --text-main: #ffffff;
+            --text-sub: rgba(255,255,255,0.6);
+            /* iOS 经典毛玻璃材质 */
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         body.dark-mode {
-            --primary: #ff9a7b;
-            --secondary: #9a75f0;
-            --card-bg: rgba(0, 0, 0, 0.5);
-            --input-bg: rgba(255, 255, 255, 0.1);
-            --box-bg: rgba(127, 86, 218, 0.3);
+            --bg-grad-1: #000000;
+            --bg-grad-2: #1a1a2e;
+            --glass-bg: rgba(30, 30, 30, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         body { 
-            font-family: 'PingFang SC', sans-serif; 
-            color: var(--text); 
+            /* 强制调用苹果设备的原生字体 */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+            color: var(--text-main); 
             padding: 20px; 
             margin: 0;
             min-height: 100vh;
-            /* 绚丽渐变背景 */
-            background: linear-gradient(135deg, #2d1b5a 0%, #1a1a2e 50%, #46222c 100%);
+            background: linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2));
             -webkit-user-select: none; 
             overflow-x: hidden;
             display: flex;
             justify-content: center;
             align-items: flex-start;
+            transition: background 0.5s ease;
         }
 
-        /* ✨ 升级一：粒子效果画布 */
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1; /* 在背景之上，内容之下 */
-            pointer-events: none; /* 不妨碍点击 */
-        }
+        #particles-js { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; pointer-events: none; }
 
-        /* 升级二：超强玻璃拟物卡片 */
-        .card-container {
-            position: relative;
-            z-index: 2;
-            max-width: 500px;
-            width: 100%;
-            margin-top: 40px;
-        }
+        .card-container { position: relative; z-index: 2; max-width: 500px; width: 100%; margin-top: 20px; }
 
-        /* 🐹 升级三：卡片耳朵装饰 */
-        .card-ear {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: var(--primary);
-            border-radius: 50%;
-            top: -25px;
-            z-index: -1;
-            box-shadow: 0 4px 15px rgba(255, 122, 89, 0.4);
-        }
-        .ear-left { left: 40px; }
-        .ear-right { right: 40px; }
-
+        /* 🍎 苹果风极致毛玻璃卡片 */
         .card { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 35px 25px; 
-            border-radius: 30px; 
-            box-shadow: 0 15px 45px rgba(0,0,0,0.3); 
-            border: 1px solid var(--border);
+            background: var(--glass-bg); 
+            backdrop-filter: saturate(180%) blur(25px);
+            -webkit-backdrop-filter: saturate(180%) blur(25px);
+            padding: 30px 25px; 
+            border-radius: 32px; /* 更大的圆角 */
+            box-shadow: var(--glass-shadow); 
+            border: 1px solid var(--glass-border);
             text-align: center;
-            transition: 0.5s ease;
         }
 
-        /* 顶部动作条 */
-        .header-actions { position: absolute; top: -15px; right: 20px; display: flex; gap: 10px; z-index: 10; }
-        .icon-btn { background: var(--secondary); border: none; font-size: 18px; cursor: pointer; color: white; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s; }
-        .icon-btn:active { transform: scale(0.9) rotate(20deg); }
+        .header-actions { position: absolute; top: 20px; right: 25px; z-index: 10; }
+        .icon-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); font-size: 16px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 18px; backdrop-filter: blur(10px); transition: 0.2s; }
+        .icon-btn:active { transform: scale(0.9); }
 
-        h2 { font-weight: 900; margin: 0 0 5px 0; font-size: 26px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        h2 span { animation: starRotate 2s linear infinite; display: inline-block; color: var(--accent); }
-        
+        h2 { font-weight: 700; margin: 0 0 8px 0; font-size: 24px; letter-spacing: 0.5px; }
+        h2 span { animation: starRotate 3s linear infinite; display: inline-block; }
         @keyframes starRotate { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
-        /* 📢 升级四：每日健康锦囊 */
+        /* 锦囊区 */
         .quote-box {
-            background: var(--input-bg);
-            border-radius: 15px;
-            padding: 12px;
-            margin-bottom: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 25px;
             font-size: 13px;
-            color: var(--accent);
-            border: 1px solid rgba(255, 235, 59, 0.3);
+            color: rgba(255,255,255,0.9);
             text-align: left;
-            position: relative;
+            font-weight: 500;
         }
-        .quote-box::before { content: '📢'; margin-right: 8px; }
 
-        /* 输入区 */
+        /* 🍎 iOS 原生风格输入框 */
         textarea { 
-            width: 90%; height: 90px; padding: 15px; margin: 15px 0; 
+            width: 100%; height: 90px; padding: 16px; margin: 15px 0; 
             border-radius: 20px; 
-            border: 1px solid var(--border); 
-            background: var(--input-bg); 
+            border: none;
+            background: rgba(0, 0, 0, 0.2); 
             color: white; 
             font-size: 16px; 
             resize: none; 
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            font-family: inherit;
             transition: 0.3s;
         }
-        textarea::placeholder { color: rgba(255,255,255,0.5); }
-        textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(255,235,59,0.3); }
+        textarea::placeholder { color: var(--text-sub); }
+        textarea:focus { outline: none; background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 0 0 1px var(--secondary); }
 
-        /* 🚀 升级五：流光按钮 */
+        /* 🍎 iOS 大圆角强调按钮 */
         button.main-btn { 
-            background: linear-gradient(135deg, var(--primary) 0%, #ff5252 50%, var(--secondary) 100%);
-            background-size: 200% auto;
-            color: white; border: none; padding: 15px 35px; border-radius: 30px; 
-            font-size: 18px; cursor: pointer; font-weight: bold; width: 90%; 
-            box-shadow: 0 5px 20px rgba(255, 122, 89, 0.5);
-            transition: all 0.4s ease;
-            animation: flowingGlow 3s linear infinite;
+            background: var(--text-main);
+            color: #1c1c38; 
+            border: none; padding: 16px 0; border-radius: 24px; 
+            font-size: 17px; cursor: pointer; font-weight: 600; width: 100%; 
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            margin-bottom: 10px;
         }
-        button.main-btn:active { transform: scale(0.95); }
-        
-        @keyframes flowingGlow { 
-            0% { background-position: 0% 50%; } 
-            50% { background-position: 100% 50%; } 
-            100% { background-position: 0% 50%; } 
-        }
+        button.main-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.8); }
 
         /* 进度条 */
-        .progress-text { font-size: 14px; color: var(--sub-text); margin-bottom: 5px; text-align: left; font-weight: 600;}
-        .progress-container { width: 100%; background: rgba(255,255,255,0.1); border-radius: 15px; height: 16px; margin: 15px 0; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .progress-text { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; text-align: left; font-weight: 500;}
+        .progress-container { width: 100%; background: rgba(0,0,0,0.2); border-radius: 10px; height: 12px; margin-bottom: 20px; overflow: hidden; }
         .progress-bar { 
             height: 100%; 
-            background: linear-gradient(90deg, #4caf50, #cddc39, #ffeb3b); 
+            background: var(--success); 
             width: 0%; 
-            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); 
         }
 
-        /* 数据展示 */
-        .stats { display: flex; justify-content: space-around; margin-top: 30px; gap: 10px; }
-        .stat-box { background: var(--box-bg); padding: 18px 5px; border-radius: 20px; width: 23%; font-size: 13px; transition: 0.3s; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .stat-val { font-size: 24px; font-weight: 900; color: white; margin: 5px 0; display: block; text-shadow: 0 0 10px var(--primary); }
+        /* 数据网格 */
+        .stats { display: flex; justify-content: space-between; margin-top: 25px; gap: 12px; }
+        .stat-box { 
+            background: rgba(255,255,255,0.08); 
+            padding: 16px 5px; 
+            border-radius: 20px; 
+            flex: 1; 
+            font-size: 12px; 
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+        .stat-val { font-size: 22px; font-weight: 700; color: white; margin: 4px 0; display: block; }
         
-        #msg { margin-top: 15px; font-size: 14px; color: white; font-weight: bold; background: var(--secondary); padding: 15px; border-radius: 15px; display: none; line-height: 1.6; text-align: left; border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(255,235,59,0.2); }
-        #loading { color: var(--accent); font-size: 16px; margin-top: 10px; display: none; font-weight: bold; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        #msg { margin-top: 15px; font-size: 14px; color: #1c1c38; font-weight: 600; background: rgba(255,255,255,0.9); padding: 16px; border-radius: 18px; display: none; line-height: 1.5; text-align: left; }
+        #loading { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px; display: none; font-weight: 500; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
 
-        .chart-container { width: 180px; height: 180px; margin: 25px auto; position: relative; filter: drop-shadow(0 0 15px rgba(127,86,218,0.4)); }
-        hr { border: none; border-top: 2px dashed var(--border); margin: 30px 0; }
+        .chart-container { width: 160px; height: 160px; margin: 20px auto; position: relative; }
+        hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0; }
 
         /* 流水账 */
-        .log-list { text-align: left; margin-top: 20px; max-height: 250px; overflow-y: auto; padding-right: 8px; }
-        .log-item { background: var(--input-bg); padding: 15px; border-radius: 15px; margin-bottom: 12px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; transition: 0.3s; }
-        .log-item:hover { border-color: var(--secondary); transform: scale(1.02); }
-        .log-time { color: var(--accent); font-weight: bold; margin-right: 10px; font-family: monospace;}
-        .del-btn { color: white; background: #f44336; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-clear { background: var(--input-bg); color: var(--sub-text); border: 1px solid var(--border); padding: 12px 25px; font-size: 14px; margin-top: 25px; border-radius: 25px; cursor: pointer; transition: 0.3s;}
-        .btn-clear:hover { background: rgba(255,0,0,0.2); color: white; border-color: red; }
+        .log-list { text-align: left; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .log-item { background: rgba(255,255,255,0.05); padding: 14px 16px; border-radius: 16px; margin-bottom: 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .log-time { color: var(--text-sub); font-size: 13px; margin-right: 12px; font-weight: 500;}
+        .del-btn { color: var(--text-main); background: rgba(255,255,255,0.1); border: none; width: 28px; height: 28px; border-radius: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center;}
+        .del-btn:active { background: var(--primary); }
+        .btn-clear { background: transparent; color: var(--primary); border: none; font-weight: 600; padding: 12px; font-size: 15px; margin-top: 20px; cursor: pointer; width: 100%;}
+        .btn-clear:active { opacity: 0.7; }
     </style>
 </head>
 <body>
     <div id="particles-js"></div>
 
     <div class="card-container">
-        <div class="card-ear ear-left"></div>
-        <div class="card-ear ear-right"></div>
-
         <div class="card">
             <div class="header-actions">
                 <button class="icon-btn" onclick="toggleDarkMode()" id="themeIcon">🌙</button>
@@ -205,36 +170,37 @@
             </div>
 
             <textarea id="foodInput" placeholder="😋 今天炫了什么好吃的？"></textarea>
-            <br>
-            <button class="main-btn" onclick="analyzeFood()">✨ 记录这一顿 ✨</button>
+            
+            <button class="main-btn" onclick="analyzeFood()">记录这一顿</button>
             <div id="loading">🔮 魔法演算中...</div>
             <div id="msg"></div>
 
             <hr>
-            <h3 style="margin-bottom:0;">📊 今日摄入雷达 🥗</h3>
             
             <div class="chart-container">
                 <canvas id="macroChart"></canvas>
             </div>
             
             <div class="stats">
-                <div class="stat-box">🔥 热量<span class="stat-val" id="tot-cal">0</span>kcal</div>
-                <div class="stat-box">🥩 蛋白<span class="stat-val" id="tot-pro">0</span>g</div>
-                <div class="stat-box">🍞 碳水<span class="stat-val" id="tot-car">0</span>g</div>
-                <div class="stat-box">🧈 脂肪<span class="stat-val" id="tot-fat">0</span>g</div>
+                <div class="stat-box">🔥热量<span class="stat-val" id="tot-cal">0</span>kcal</div>
+                <div class="stat-box">🥩蛋白<span class="stat-val" id="tot-pro">0</span>g</div>
+                <div class="stat-box">🍞碳水<span class="stat-val" id="tot-car">0</span>g</div>
+                <div class="stat-box">🧈脂肪<span class="stat-val" id="tot-fat">0</span>g</div>
             </div>
 
             <hr>
-            <h3>🕰️ 饮食时光机 🥝</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size: 18px; font-weight:600;">饮食时光机</h3>
+            </div>
+            
             <div class="log-list" id="log-container"></div>
 
-            <button class="btn-clear" onclick="clearData()">🔄 开启崭新的一天</button>
+            <button class="btn-clear" onclick="clearData()">清空今日记录</button>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        // 📢 锦囊列表喵！
         const QUOTES = [
             "每一克蛋白质，都是通往 60kg 的阶梯喵！加油！",
             "刚瞪完椭圆机？那现在的你需要来点优质碳水补补！",
@@ -242,37 +208,28 @@
             "DeepSeek 魔法师提醒你：控制脂肪摄入是关键！",
             "向着 60kg，冲鸭！🐹✨",
             "多吃蔬菜，你的肠道会给你点赞！ Broccoli 🥦 Power！",
-            "运动完记得多喝水喵！",
-            "哈尔滨的鼠鼠，天冷注意保暖，吃好喝好才有力气蹬机子！"
+            "运动完记得多喝水喵！"
         ];
 
-        // ✨ 初始化魔法粒子效果
         particlesJS("particles-js", {
             particles: {
-                number: { value: 60, density: { enable: true, value_area: 800 } },
-                color: { value: ["#ff7a59", "#7f56da", "#ffeb3b"] }, // 彩色粒子喵！
-                shape: { type: ["circle", "star"] }, // 星星和气泡
-                opacity: { value: 0.5, random: true },
-                size: { value: 4, random: true },
-                line_linked: { enable: false }, // 不用线连，看起来更梦幻
-                move: { enable: true, speed: 1.5, direction: "top", random: true, out_mode: "out" } // 向上飘动喵！
+                number: { value: 40, density: { enable: true, value_area: 800 } },
+                color: { value: ["#ffffff"] }, 
+                shape: { type: ["circle"] },
+                opacity: { value: 0.3, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: false },
+                move: { enable: true, speed: 1, direction: "top", random: true, out_mode: "out" }
             },
-            interactivity: {
-                detect_on: "canvas",
-                events: { onhover: { enable: true, mode: "bubble" }, onclick: { enable: true, mode: "repulse" } },
-                modes: { bubble: { distance: 150, size: 8, duration: 2, opacity: 0.8 }, repulse: { distance: 200, duration: 0.4 } }
-            }
+            interactivity: { events: { onhover: { enable: false }, onclick: { enable: false } } }
         });
 
-        // 逻辑代码（依然安全版喵！）
         let nutritionData = JSON.parse(localStorage.getItem('mouse_nutrition_v3')) || { cal: 0, pro: 0, car: 0, fat: 0, logs: [] };
         const TARGET_CAL = 2200; 
         let macroChart;
 
         window.onload = function() {
-            // 显示锦囊喵
             document.getElementById('quote-display').innerText = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-            
             if(localStorage.getItem('mouse_darkmode') === 'true') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('themeIcon').innerText = '☀️';
@@ -291,25 +248,25 @@
 
         async function analyzeFood() {
             const text = document.getElementById('foodInput').value;
-            if (!text) return alert("❌ 魔法需要媒介！快告诉我炫了什么喵！");
+            if (!text) return alert("❌ 快告诉我炫了什么喵！");
             
             document.getElementById('loading').style.display = 'block';
             document.getElementById('msg').style.display = 'none';
 
+            // ⚠️ 重点优化：剥离了 msg 请求，极大缩短 AI 响应时间，节省 Token
             const prompt = `你是一个专业的营养师。用户刚刚吃下了这些食物：${text}。
             请估算总卡路里(kcal)、蛋白质(g)、碳水(g)和脂肪(g)。
             请严格返回JSON格式，不要有任何文字或Markdown标记。格式如下：
-            {"cal": 120, "pro": 10.5, "car": 20, "fat": 5, "msg": "一句结合用户食物的、可爱的鼓励语喵！"}`;
+            {"cal": 120, "pro": 10.5, "car": 20, "fat": 5}`;
 
             try {
-                // 走咱们专属的国内直连无钥匙代理小哥
                 const response = await fetch("https://api.mousefries.top/chat/completions", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: "deepseek-chat",
                         messages: [
-                            {"role": "system", "content": "你是一个输出纯JSON格式的营养师喵！。"},
+                            {"role": "system", "content": "你是一个输出纯JSON格式的营养师。"},
                             {"role": "user", "content": prompt}
                         ],
                         response_format: { type: "json_object" }
@@ -323,13 +280,11 @@
                 resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(resultText);
 
-                // 累加数据
                 nutritionData.cal += result.cal; 
                 nutritionData.pro += result.pro; 
                 nutritionData.car += result.car; 
                 nutritionData.fat += result.fat;
 
-                // 生成流水账
                 const now = new Date();
                 const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
                 const summary = text.length > 10 ? text.substring(0, 10) + "..." : text; 
@@ -339,11 +294,11 @@
 
                 saveData(); updateUI();
 
-                document.getElementById('msg').innerHTML = `💡 <b>魔幻提示：</b><br>${result.msg}`;
+                // ⚠️ 重点优化：直接使用专属的固定金句，无需 AI 现编
+                const fixedMsg = "记录成功喵！每一口优质营养，都是向着目标进发的基石！🐹✨";
+                document.getElementById('msg').innerHTML = `💡 <b>提示：</b><br>${fixedMsg}`;
                 document.getElementById('msg').style.display = 'block';
                 document.getElementById('foodInput').value = ''; 
-                
-                // 刷新锦囊猫！
                 document.getElementById('quote-display').innerText = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
             } catch (e) {
@@ -367,43 +322,35 @@
             }
         }
 
-        function saveData() {
-            localStorage.setItem('mouse_nutrition_v3', JSON.stringify(nutritionData));
-        }
+        function saveData() { localStorage.setItem('mouse_nutrition_v3', JSON.stringify(nutritionData)); }
 
         function updateUI() {
-            // 更新数字
             document.getElementById('tot-cal').innerText = nutritionData.cal.toFixed(1);
             document.getElementById('tot-pro').innerText = nutritionData.pro.toFixed(1);
             document.getElementById('tot-car').innerText = nutritionData.car.toFixed(1);
             document.getElementById('tot-fat').innerText = nutritionData.fat.toFixed(1);
             
-            // 更新进度条喵
             document.getElementById('cal-current').innerText = nutritionData.cal.toFixed(0);
             let percent = (nutritionData.cal / TARGET_CAL) * 100;
             if (percent > 100) percent = 100;
             const bar = document.getElementById('cal-progress');
             bar.style.width = percent + '%';
             
-            // 超标警告喵喵喵喵喵喵喵喵喵喵喵！
-            if(percent >= 100) { 
-                bar.style.background = 'linear-gradient(90deg, #f44336, #ff1744)';
-                bar.style.boxShadow = '0 0 15px rgba(255,23,68,0.7)';
-            }
-            else { bar.style.background = 'linear-gradient(90deg, #4caf50, #cddc39, #ffeb3b)';  bar.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.5)';}
+            if(percent >= 100) { bar.style.background = 'var(--primary)'; }
+            else if (percent > 80) { bar.style.background = 'var(--warning)'; }
+            else { bar.style.background = 'var(--success)'; }
 
-            // 更新流水账喵
             const logBox = document.getElementById('log-container');
             logBox.innerHTML = '';
             if(nutritionData.logs.length === 0) {
-                logBox.innerHTML = '<p style="color:var(--sub-text); font-size: 13px; text-align:center;">时光机里还空空如也喵~</p>';
+                logBox.innerHTML = '<p style="color:var(--text-sub); font-size: 14px; text-align:center; margin-top:30px;">今日还未记录喵</p>';
             } else {
                 nutritionData.logs.forEach(log => {
                     logBox.innerHTML += `
                         <div class="log-item">
-                            <div>
+                            <div style="display:flex; align-items:center;">
                                 <span class="log-time">${log.time}</span>
-                                <span style="color:white;">${log.text} <span style="color:var(--accent); font-weight:bold;">(+${log.cal}kcal)</span></span>
+                                <span>${log.text} <span style="font-weight:600; color:var(--text-sub); margin-left:6px;">+${log.cal}</span></span>
                             </div>
                             <button class="del-btn" onclick="deleteLog(${log.id})">✖</button>
                         </div>
@@ -411,7 +358,6 @@
                 });
             }
 
-            // 更新图表喵喵喵喵！
             if (macroChart) {
                 macroChart.data.datasets[0].data = [nutritionData.pro, nutritionData.car, nutritionData.fat];
                 macroChart.update();
@@ -420,30 +366,29 @@
 
         function initChart() {
             const ctx = document.getElementById('macroChart').getContext('2d');
+            Chart.defaults.color = 'rgba(255, 255, 255, 0.6)';
             macroChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['蛋白质', '碳水', '脂肪'],
                     datasets: [{
                         data: [nutritionData.pro, nutritionData.car, nutritionData.fat],
-                        backgroundColor: ['#4caf50', '#ffeb3b', '#ff7a59'], // 更魔幻的颜色
+                        backgroundColor: ['#34C759', '#FF9500', '#FF3B30'], 
                         borderWidth: 0,
-                        hoverOffset: 10
+                        hoverOffset: 4
                     }]
                 },
                 options: {
                     responsive: true,
-                    cutout: '72%',
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    animation: { animateRotate: true, animateScale: true } // 增加启动动画喵喵！
+                    cutout: '75%',
+                    plugins: { legend: { display: false } },
+                    animation: { animateRotate: true, animateScale: true }
                 }
             });
         }
 
         function clearData() {
-            if(confirm("确定要启动禁忌魔法：清空记录喵？")) {
+            if(confirm("确定清空今日数据吗？")) {
                 nutritionData = { cal: 0, pro: 0, car: 0, fat: 0, logs: [] };
                 saveData(); updateUI();
                 document.getElementById('msg').style.display = 'none';
