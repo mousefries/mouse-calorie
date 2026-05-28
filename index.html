@@ -41,7 +41,7 @@
     </div>
 
     <script>
-        // 已经帮鼠鼠把专属 API Key 填好啦！
+        // 你的专属 API Key 已经配好啦
         const GEMINI_API_KEY = "AIzaSyCuuNKVgkixVH7XKG2mah0UNwSG-gj1OVs"; 
         
         let totals = { cal: 0, pro: 0, car: 0, fat: 0 };
@@ -53,14 +53,14 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('msg').style.display = 'none';
 
-            // 修改了提示词，让 AI 的回复对所有人都很友好、充满鼓励
             const prompt = `你是一个专业的营养师。用户刚刚吃下了这些食物：${text}。
             请估算总卡路里(kcal)、蛋白质(g)、碳水(g)和脂肪(g)。
             请严格返回JSON格式，不要有任何其他文字或Markdown标记。格式如下：
             {"cal": 120, "pro": 10.5, "car": 20, "fat": 5, "msg": "一句结合用户吃的食物的简短、可爱的鼓励语，语气要亲切自然，就像好朋友一样"}`;
 
             try {
-const response = await fetch(`https://gemini-proxy.lwhipad1.workers.dev/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                // 👇 这里已经无缝接入了鼠鼠刚才配置的免翻墙专线 api.mousefries.top！
+                const response = await fetch(`https://api.mousefries.top/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -71,7 +71,6 @@ const response = await fetch(`https://gemini-proxy.lwhipad1.workers.dev/v1beta/m
                 const data = await response.json();
                 let resultText = data.candidates[0].content.parts[0].text;
                 
-                // 清理多余的格式符号
                 resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(resultText);
 
