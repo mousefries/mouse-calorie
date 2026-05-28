@@ -3,46 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AI 营养师">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/notionists/svg?seed=mouse&backgroundColor=ff8a65">
+
     <title>AI 智能营养追踪器</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { font-family: 'PingFang SC', sans-serif; text-align: center; background-color: #f7f9fc; padding: 20px; color: #333; }
+        body { font-family: 'PingFang SC', sans-serif; text-align: center; background-color: #f7f9fc; padding: 20px; color: #333; -webkit-user-select: none; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); max-width: 500px; margin: 0 auto; }
         h2 { color: #ff8a65; }
         textarea { width: 90%; height: 80px; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; resize: none; font-family: inherit; }
         button { background: #ff8a65; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         button:active { background: #e67c5c; transform: scale(0.95); }
+        .btn-clear { background: #eee; color: #888; padding: 8px 15px; font-size: 12px; margin-top: 15px; }
         .stats { display: flex; justify-content: space-around; margin-top: 25px; gap: 10px; }
         .stat-box { background: #fff3e0; padding: 15px 5px; border-radius: 15px; width: 23%; font-size: 14px; }
         .stat-val { font-size: 20px; font-weight: bold; color: #e65100; margin: 5px 0; display: block; }
         #msg { margin-top: 15px; font-size: 15px; color: #ff8a65; font-weight: bold; min-height: 20px; background: #fff3e0; padding: 10px; border-radius: 10px; display: none; line-height: 1.5; }
         #loading { color: #888; font-size: 14px; margin-top: 10px; display: none; }
+        .chart-container { width: 200px; height: 200px; margin: 20px auto; position: relative; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>✨ AI 智能营养追踪器</h2>
-        <p style="color: #888; font-size: 14px;">不用再辛苦算克数啦！随口一说，让 AI 营养师帮你搞定卡路里~</p>
+        <p style="color: #888; font-size: 14px;">随口一说，AI 自动拆解三大营养素！</p>
         
-        <textarea id="foodInput" placeholder="今天吃了什么好吃的？比如：中午吃了一碗大份的麻辣烫，加了肥牛和方便面..."></textarea>
+        <textarea id="foodInput" placeholder="刚干完一圈椭圆机，吃了一份大盘鸡加拉面..."></textarea>
         <br>
-        <button onclick="analyzeFood()">✨ 让 AI 算一下</button>
-        <div id="loading">🧠 AI 营养师正在努力计算中...</div>
+        <button onclick="analyzeFood()">✨ 记录这一顿</button>
+        <div id="loading">🧠 AI 正在疯狂计算中...</div>
         <div id="msg"></div>
 
         <hr style="border: none; border-top: 1px dashed #eee; margin: 25px 0;">
-        <h3 style="color: #555; font-size: 16px;">📊 今日摄入总计</h3>
+        <h3 style="color: #555; font-size: 16px;">📊 今日摄入雷达</h3>
+        
+        <div class="chart-container">
+            <canvas id="macroChart"></canvas>
+        </div>
         
         <div class="stats">
-            <div class="stat-box">🔥 热量<span class="stat-val" id="tot-cal">0</span>kcal</div>
-            <div class="stat-box">🥩 蛋白<span class="stat-val" id="tot-pro">0</span>g</div>
-            <div class="stat-box">🍞 碳水<span class="stat-val" id="tot-car">0</span>g</div>
-            <div class="stat-box">🧈 脂肪<span class="stat-val" id="tot-fat">0</span>g</div>
+            <div class="stat-box">🔥 热量<span class="stat-val" id="tot-cal">0</span></div>
+            <div class="stat-box">🥩 蛋白<span class="stat-val" id="tot-pro">0</span></div>
+            <div class="stat-box">🍞 碳水<span class="stat-val" id="tot-car">0</span></div>
+            <div class="stat-box">🧈 脂肪<span class="stat-val" id="tot-fat">0</span></div>
         </div>
+
+        <button class="btn-clear" onclick="clearData()">🔄 开启新一天 (清空记录)</button>
     </div>
 
     <script>
         const DEEPSEEK_API_KEY = "sk-77af62e87d2d4423b8f8a4a0a4a53760"; 
-        let totals = { cal: 0, pro: 0, car: 0, fat: 0 };
+        
+        // 🧠 升级二：本地记忆芯片初始化！
+        let totals = JSON.parse(localStorage.getItem('mouse_nutrition')) || { cal: 0, pro: 0, car: 0, fat: 0 };
+        let macroChart;
+
+        // 页面一加载，就把记忆里的数据画出来
+        window.onload = function() {
+            updateUI();
+            initChart();
+        }
 
         async function analyzeFood() {
             const text = document.getElementById('foodInput').value;
@@ -57,11 +83,11 @@
 
             const prompt = `你是一个专业的营养师。用户刚刚吃下了这些食物：${text}。
             请估算总卡路里(kcal)、蛋白质(g)、碳水(g)和脂肪(g)。
-            请严格返回JSON格式，不要有任何其他文字或Markdown标记。格式如下：
-            {"cal": 120, "pro": 10.5, "car": 20, "fat": 5, "msg": "一句结合用户吃的食物的简短、可爱的鼓励语，语气要亲切自然，就像好朋友一样"}`;
+            请严格返回JSON格式，不要有任何文字或Markdown标记。格式如下：
+            {"cal": 120, "pro": 10.5, "car": 20, "fat": 5, "msg": "一句结合用户食物的简短可爱鼓励语"}`;
 
             try {
-                // 👇 看这里！换成了咱们的跑腿专线！完美绕过所有防火墙！
+                // 走咱们专属的国内直连代理小哥
                 const response = await fetch("https://api.mousefries.top/chat/completions", {
                     method: 'POST',
                     headers: { 
@@ -78,33 +104,79 @@
                     })
                 });
                 
-                if (!response.ok) {
-                    if (response.status === 402) throw new Error("ERROR_402");
-                    throw new Error("ERROR_OTHER");
-                }
+                if (!response.ok) throw new Error("API 请求失败");
 
                 const data = await response.json();
                 let resultText = data.choices[0].message.content;
                 resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(resultText);
 
-                totals.cal += result.cal; totals.pro += result.pro; totals.car += result.car; totals.fat += result.fat;
-                document.getElementById('tot-cal').innerText = totals.cal.toFixed(1);
-                document.getElementById('tot-pro').innerText = totals.pro.toFixed(1);
-                document.getElementById('tot-car').innerText = totals.car.toFixed(1);
-                document.getElementById('tot-fat').innerText = totals.fat.toFixed(1);
+                // 累加数据并保存到记忆芯片
+                totals.cal += result.cal; 
+                totals.pro += result.pro; 
+                totals.car += result.car; 
+                totals.fat += result.fat;
+                localStorage.setItem('mouse_nutrition', JSON.stringify(totals));
+
+                // 刷新界面和图表
+                updateUI();
 
                 document.getElementById('msg').innerHTML = `💡 <b>营养师说：</b><br>${result.msg}`;
                 document.getElementById('msg').style.display = 'block';
                 document.getElementById('foodInput').value = ''; 
             } catch (e) {
-                let errMsg = "🚧 哎呀，网络通道堵车了！";
-                if (e.message === "ERROR_402") errMsg = "💸 DeepSeek 提醒：API 账户里没钱啦，去官网充1块钱吧！";
-                document.getElementById('msg').innerHTML = `<span style="color:red">${errMsg}</span>`;
+                document.getElementById('msg').innerHTML = `<span style="color:red">🚧 哎呀，网络通道堵车了！</span>`;
                 document.getElementById('msg').style.display = 'block';
                 console.error(e);
             } finally {
                 document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // 统一刷新数字和图表的魔法函数
+        function updateUI() {
+            document.getElementById('tot-cal').innerText = totals.cal.toFixed(1);
+            document.getElementById('tot-pro').innerText = totals.pro.toFixed(1);
+            document.getElementById('tot-car').innerText = totals.car.toFixed(1);
+            document.getElementById('tot-fat').innerText = totals.fat.toFixed(1);
+            
+            if (macroChart) {
+                macroChart.data.datasets[0].data = [totals.pro, totals.car, totals.fat];
+                macroChart.update();
+            }
+        }
+
+        // 绘制炫酷环形图
+        function initChart() {
+            const ctx = document.getElementById('macroChart').getContext('2d');
+            macroChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['蛋白质 (g)', '碳水 (g)', '脂肪 (g)'],
+                    datasets: [{
+                        data: [totals.pro, totals.car, totals.fat],
+                        backgroundColor: ['#4caf50', '#ff9800', '#f44336'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false } // 隐藏多余图例，保持清爽
+                    }
+                }
+            });
+        }
+
+        // 清空重置，迎接新的一天
+        function clearData() {
+            if(confirm("确定要清空今天的记录，迎接崭新的一天吗？")) {
+                totals = { cal: 0, pro: 0, car: 0, fat: 0 };
+                localStorage.setItem('mouse_nutrition', JSON.stringify(totals));
+                updateUI();
+                document.getElementById('msg').style.display = 'none';
             }
         }
     </script>
