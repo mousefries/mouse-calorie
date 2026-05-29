@@ -3,212 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>领地战 Color Wars 终极版</title>
+    <title>领地战 联机版 ✨</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
     <style>
         /* 🌌 苹果风深邃背景 */
-        body {
-            margin: 0; padding: 0; height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            background: linear-gradient(135deg, #1c1c1e 0%, #2c2c34 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            user-select: none; -webkit-user-select: none; color: white;
-            overflow: hidden;
-        }
+        body { margin: 0; padding: 0; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #1c1c1e 0%, #2c2c34 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; color: white; overflow: hidden; }
 
-        /* 📋 通用毛玻璃模态框 (大厅 & 教程 & 结算) */
-        .modal-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 50; transition: opacity 0.4s ease;
-        }
-        .modal-card {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
-            padding: 30px; border-radius: 28px; width: 85%; max-width: 400px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.6); position: relative;
-            transform: scale(0.95); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .modal-card.show { transform: scale(1); }
-
-        .setup-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        select {
-            background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 12px; border-radius: 12px; font-size: 1rem; outline: none;
-        }
+        /* 📋 模态框通用样式 */
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; transition: opacity 0.4s ease; }
+        .modal-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); padding: 30px; border-radius: 28px; width: 85%; max-width: 400px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); text-align: center; }
         
-        /* 按钮组 */
-        .btn {
-            width: 100%; padding: 16px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 16px; 
-            cursor: pointer; transition: 0.2s; margin-top: 10px;
-        }
+        .btn { width: 100%; padding: 16px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 16px; cursor: pointer; transition: 0.2s; margin-top: 15px; color: white;}
         .btn:active { transform: scale(0.95); }
-        .start-btn { background: #30D158; color: white; box-shadow: 0 10px 20px rgba(48, 209, 88, 0.4); margin-top: 20px;}
-        .tut-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; padding: 12px;}
+        .btn-host { background: #0A84FF; box-shadow: 0 10px 20px rgba(10, 132, 255, 0.4); }
+        .btn-join { background: #30D158; box-shadow: 0 10px 20px rgba(48, 209, 88, 0.4); }
+        .btn-local { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); }
 
-        /* 📖 教程专属样式 */
-        .tutorial-step { margin-bottom: 15px; line-height: 1.5; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 16px;}
-        .tut-title { color: #FFCC00; font-weight: bold; margin-bottom: 5px; font-size: 1.1rem;}
+        input { width: 90%; padding: 15px; border-radius: 12px; border: none; font-size: 1.5rem; text-align: center; font-weight: bold; margin-top: 15px; background: rgba(0,0,0,0.5); color: #FFCC00; outline: none; text-transform: uppercase; }
 
         /* 🎮 游戏主界面 */
-        #status-bar {
-            width: 90%; max-width: 450px; padding: 12px 20px; border-radius: 16px;
-            text-align: center; font-size: 1.2rem; font-weight: bold;
-            margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            transition: 0.4s ease; box-sizing: border-box; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        #board-container {
-            width: 95vw; max-width: 450px; aspect-ratio: 1 / 1; 
-            background: rgba(40, 40, 45, 0.8); border-radius: 24px; padding: 8px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-            box-sizing: border-box;
-        }
-        #board {
-            display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr);
-            gap: 6px; width: 100%; height: 100%;
-        }
-        .cell {
-            background: rgba(255,255,255,0.06); border-radius: 14px;
-            position: relative; cursor: pointer; transition: background-color 0.3s ease, transform 0.1s;
-        }
+        #status-bar { width: 90%; max-width: 450px; padding: 12px 20px; border-radius: 16px; text-align: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); transition: 0.4s ease; }
+        #board-container { width: 95vw; max-width: 450px; aspect-ratio: 1 / 1; background: rgba(40, 40, 45, 0.8); border-radius: 24px; padding: 8px; box-sizing: border-box; }
+        #board { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); gap: 6px; width: 100%; height: 100%; }
+        .cell { background: rgba(255,255,255,0.06); border-radius: 14px; position: relative; cursor: pointer; transition: transform 0.1s; }
         .cell:active { transform: scale(0.92); }
-        .dot {
-            position: absolute; width: 30px; height: 30px; margin-top: -15px; margin-left: -15px; 
-            display: flex; justify-content: center; align-items: center; font-size: 24px;
-            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform: scale(0); opacity: 0; pointer-events: none; 
-        }
+        .dot { position: absolute; width: 30px; height: 30px; margin-top: -15px; margin-left: -15px; display: flex; justify-content: center; align-items: center; font-size: 24px; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); transform: scale(0); opacity: 0; pointer-events: none; }
         .dot.show { transform: scale(1); opacity: 1; }
 
-        /* 🏆 终极结算弹窗 */
-        #victory-screen { z-index: 100; display: none; opacity: 0; }
-        .victory-card { text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.8); }
-        .winner-icon { font-size: 6rem; margin-bottom: 10px; line-height: 1.1; animation: winnerBounce 2s infinite ease-in-out; text-shadow: 0 15px 30px rgba(0,0,0,0.6); }
-        .winner-text { font-size: 2rem; font-weight: 800; margin-bottom: 30px; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); letter-spacing: 2px; }
-
-        @keyframes winnerBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
-
-        /* 颜色定义 */
+        /* 颜色 */
         .color-0 { background-color: #FFCC00 !important; color: #000; }
         .color-1 { background-color: #0A84FF !important; color: #fff; }
-        .color-2 { background-color: #30D158 !important; color: #000; }
-        .color-3 { background-color: #FF453A !important; color: #fff; }
     </style>
 </head>
 <body>
 
-    <!-- 赛前大厅 -->
-    <div id="setup-screen" class="modal-overlay">
-        <div class="modal-card show" id="setup-card">
-            <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px;">⚔️ 领地战配置</h2>
-            <div class="setup-row">
-                <span style="font-weight: bold;">🎨 棋子皮肤：</span>
-                <select id="skin-select">
-                    <option value="0">经典纯色 🟡🔵🟢🔴</option>
-                    <option value="1">疯狂动物 🐹🐱🐶🐰</option>
-                    <option value="2">快乐大餐 🍟🍕🍔🥤</option>
-                    <option value="3">元素魔法 ⚡️💧🍃🔥</option>
-                </select>
-            </div>
-            <div id="players-config"></div>
+    <div id="lobby-screen" class="modal-overlay">
+        <div class="modal-card">
+            <h2 style="margin-top: 0;">🌐 领地战网络大厅</h2>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">1v1 双人异地直连模式</p>
             
-            <button class="btn tut-btn" onclick="showTutorial()">❓ 不会玩？点击查看极简教程</button>
-            <button class="btn start-btn" onclick="startGame()">开始战斗 🔥</button>
+            <button class="btn btn-host" onclick="createRoom()">🏠 创建房间 (做主机)</button>
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            <input type="text" id="room-input" placeholder="输入房间号" maxlength="4">
+            <button class="btn btn-join" onclick="joinRoom()">🚀 加入房间</button>
+            
+            <div id="net-status" style="margin-top: 20px; color: #FFCC00; font-weight: bold;"></div>
         </div>
     </div>
 
-    <!-- 📖 新手教程弹窗 -->
-    <div id="tutorial-screen" class="modal-overlay" style="display: none; opacity: 0; z-index: 60;">
-        <div class="modal-card" id="tutorial-card">
-            <h2 style="text-align: center; margin-top: 0; margin-bottom: 20px;">📜 极简玩法指南</h2>
-            <div class="tutorial-step"><div class="tut-title">1️⃣ 抢地盘 (首局送3子)</div>只能点击<b>空白格子</b>或<b>你自己的格子</b>。首回合点一下直接放3个子，之后每次放1个！</div>
-            <div class="tutorial-step"><div class="tut-title">2️⃣ 撑爆它 (核心机制 💥)</div>格子有容量上限：<b>角落2个，边缘3个，中间4个</b>。装满就会向四周爆炸飞溅！</div>
-            <div class="tutorial-step"><div class="tut-title">3️⃣ 疯狂吞噬 (赢取胜利 🏆)</div>爆炸飞出的棋子如果碰到敌人的格子，会瞬间<b>把敌人的地盘染成你的颜色</b>！把所有人吃光就赢了！</div>
-            <button class="btn start-btn" onclick="hideTutorial()" style="margin-top: 10px;">我懂了，去大杀四方！</button>
-        </div>
-    </div>
-
-    <!-- 游戏区域 -->
     <div id="status-bar" style="display: none;"></div>
     <div id="board-container" style="display: none;"><div id="board"></div></div>
 
-    <!-- 🏆 胜利结算弹窗 -->
-    <div id="victory-screen" class="modal-overlay">
-        <div class="modal-card victory-card" id="victory-card">
-            <div class="winner-icon" id="winner-icon">🏆</div>
-            <div class="winner-text" id="winner-name">获胜！</div>
-            <button class="btn v-btn" onclick="playAgain()" style="background: white; color: #1c1c1e;">再来一局 🔄</button>
-            <button class="btn tut-btn" onclick="backToMenu()">返回大厅 🏠</button>
-        </div>
-    </div>
-
     <script>
         const ROWS = 6, COLS = 6;
-        let grid = [], isAnimating = false, gameEnded = false;
-        let players = [], currentPlayerIndex = 0, firstMove = {}; 
+        let grid = [], isAnimating = false;
+        let currentPlayerIndex = 0; 
+        let firstMove = {0: true, 1: true}; 
         
-        const skins = [
-            ['🟡', '🔵', '🟢', '🔴'],
-            ['🐹', '🐱', '🐶', '🐰'],
-            ['🍟', '🍕', '🍔', '🥤'],
-            ['⚡️', '💧', '🍃', '🔥']
-        ];
-        const rgbColors = ['255,204,0', '10,132,255', '48,209,88', '255,69,58'];
-        const colorNames = ['黄方', '蓝方', '绿方', '红方'];
-        let currentSkin = skins[0];
+        // --- 🌐 核心网络变量 ---
+        let peer = null;
+        let conn = null;
+        let myNetworkId = null; // 0代表黄方(主机)，1代表蓝方(客机)
+        let isOnlineMode = false;
 
-        function showTutorial() {
-            const tutScreen = document.getElementById('tutorial-screen');
-            const tutCard = document.getElementById('tutorial-card');
-            tutScreen.style.display = 'flex';
-            requestAnimationFrame(() => { requestAnimationFrame(() => { tutScreen.style.opacity = '1'; tutCard.classList.add('show'); }); });
-        }
-        function hideTutorial() {
-            const tutScreen = document.getElementById('tutorial-screen');
-            const tutCard = document.getElementById('tutorial-card');
-            tutScreen.style.opacity = '0'; tutCard.classList.remove('show');
-            setTimeout(() => { tutScreen.style.display = 'none'; }, 400);
+        // 生成随机4位房间号
+        function generateRoomCode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
         }
 
-        function initSetup() {
-            const container = document.getElementById('players-config');
-            const colors = ['🟡 1号', '🔵 2号', '🟢 3号', '🔴 4号'];
-            for(let i=0; i<4; i++) {
-                container.innerHTML += `
-                    <div class="setup-row">
-                        <span style="font-weight:bold;">${colors[i]}方：</span>
-                        <select id="p${i}-type">
-                            <option value="human">👤 人类</option>
-                            <option value="ai-easy">🤖 AI (智障)</option>
-                            <option value="ai-medium">🤖 AI (普通)</option>
-                            <option value="ai-hard" selected>🧠 AI (深思)</option>
-                            ${i > 1 ? '<option value="none">❌ 关闭</option>' : ''}
-                        </select>
-                    </div>
-                `;
-            }
+        // 🏠 1. 创建房间 (主机)
+        function createRoom() {
+            const statusEl = document.getElementById('net-status');
+            statusEl.innerText = "正在开启网络对讲机...";
+            
+            const roomCode = "MOUSE" + generateRoomCode(); // 加上前缀防止冲突
+            
+            // 初始化 Peer (连接到免费公用信令服务器)
+            peer = new Peer(roomCode);
+
+            peer.on('open', (id) => {
+                const displayCode = id.replace('MOUSE', '');
+                statusEl.innerHTML = `房间创建成功！<br><span style="font-size:2rem; color:white;">${displayCode}</span><br>等待朋友加入...`;
+            });
+
+            // 等待朋友连入
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupConnection(0); // 主机永远是 0 号玩家 (黄色)
+            });
+            
+            peer.on('error', (err) => { statusEl.innerText = "网络错误: " + err.type; });
         }
 
-        function startGame() {
-            currentSkin = skins[document.getElementById('skin-select').value];
-            players = []; firstMove = {};
-            for(let i=0; i<4; i++) {
-                const val = document.getElementById(`p${i}-type`).value;
-                if(val !== 'none') {
-                    players.push({ id: i, type: val.split('-')[0], diff: val.split('-')[1] || null });
-                    firstMove[i] = true;
+        // 🚀 2. 加入房间 (客机)
+        function joinRoom() {
+            const input = document.getElementById('room-input').value.trim();
+            const statusEl = document.getElementById('net-status');
+            if(input.length !== 4) { statusEl.innerText = "请输入4位房间号！"; return; }
+
+            statusEl.innerText = "正在寻找房间...";
+            peer = new Peer(); // 随便生成一个自己的ID
+
+            peer.on('open', () => {
+                // 主动去连接主机
+                conn = peer.connect("MOUSE" + input);
+                conn.on('open', () => {
+                    setupConnection(1); // 客机永远是 1 号玩家 (蓝色)
+                });
+            });
+            peer.on('error', (err) => { statusEl.innerText = "未找到房间或网络错误！"; });
+        }
+
+        // 🔌 3. 设置网络对讲机通道
+        function setupConnection(myId) {
+            myNetworkId = myId;
+            isOnlineMode = true;
+            
+            document.getElementById('net-status').innerText = "连接成功！即将进入战场...";
+            
+            // 接收对方传来的消息 (对方点在哪了)
+            conn.on('data', (data) => {
+                if(data.type === 'click') {
+                    // 收到对方的点击指令，在本地执行 (强制跳过人类权限检测)
+                    executeClick(data.r, data.c);
                 }
-            }
-            document.getElementById('setup-screen').style.opacity = '0';
+            });
+
             setTimeout(() => {
-                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('lobby-screen').style.display = 'none';
                 document.getElementById('status-bar').style.display = 'block';
                 document.getElementById('board-container').style.display = 'block';
                 initBoard();
-            }, 400);
+            }, 1000);
         }
+
+        // --- 🎮 游戏核心逻辑 (双人版) ---
 
         function initBoard() {
             const boardEl = document.getElementById('board');
@@ -218,15 +147,16 @@
                 for (let c = 0; c < COLS; c++) {
                     const cellEl = document.createElement('div');
                     cellEl.className = 'cell';
-                    cellEl.onclick = () => handleCellClick(r, c, true);
+                    // 点击时触发网络发送
+                    cellEl.onclick = () => handlePlayerClick(r, c);
                     boardEl.appendChild(cellEl);
                     row.push({ player: null, dots: 0, limit: getLimit(r, c), element: cellEl, dotElements: [] });
                 }
                 grid.push(row);
             }
-            currentPlayerIndex = 0; gameEnded = false;
-            players.forEach(p => firstMove[p.id] = true);
-            updateUI(); checkAITurn();
+            currentPlayerIndex = 0;
+            firstMove = {0: true, 1: true};
+            updateUI();
         }
 
         function getLimit(r, c) {
@@ -236,52 +166,62 @@
             return limit;
         }
 
-        // 🚨 核心 Bug 修复：更加严谨的生存判定
-        function isPlayerAlive(pid) {
-            let hasPieces = false;
-            let hasEmpty = false;
-            for(let r=0; r<ROWS; r++) {
-                for(let c=0; c<COLS; c++) {
-                    if(grid[r][c].player === pid) hasPieces = true;
-                    if(grid[r][c].player === null) hasEmpty = true;
-                }
+        // 玩家自己的点击动作
+        function handlePlayerClick(r, c) {
+            if (isAnimating) return;
+            
+            // 【网络权限校验】如果现在不是你的回合，绝对不准点！
+            if (isOnlineMode && currentPlayerIndex !== myNetworkId) {
+                // 可以加个震动提示
+                return; 
             }
-            if (hasPieces) return true; // 有子就活着
-            // 如果没子了，但还没用过第一回合，且棋盘还有空地可以下，才算活着
-            if (firstMove[pid] && hasEmpty) return true; 
-            // 否则（没子，或者连下子的空地都被人占光了），直接憋死淘汰！
-            return false;
+
+            const cell = grid[r][c];
+            if (cell.player !== null && cell.player !== currentPlayerIndex) return; 
+
+            // 通过网络告诉对方：“我点这个格子了！”
+            if (isOnlineMode && conn) {
+                conn.send({ type: 'click', r: r, c: c });
+            }
+
+            // 在自己屏幕上执行
+            executeClick(r, c);
         }
 
-        async function handleCellClick(r, c, isHumanAction) {
-            if (isAnimating || gameEnded) return;
-            const p = players[currentPlayerIndex];
-            if (isHumanAction && p.type !== 'human') return;
+        // 核心执行动画与逻辑
+        async function executeClick(r, c) {
+            const pId = currentPlayerIndex;
             const cell = grid[r][c];
-            if (cell.player !== null && cell.player !== p.id) return; 
 
-            let dotsToAdd = firstMove[p.id] ? 3 : 1;
-            firstMove[p.id] = false; 
+            let dotsToAdd = firstMove[pId] ? 3 : 1;
+            firstMove[pId] = false; 
 
-            cell.player = p.id;
+            cell.player = pId;
             for(let i = 0; i < dotsToAdd; i++) {
                 cell.dots++; renderCell(r, c);
             }
 
             isAnimating = true;
             await checkExplosions();
-            if(!checkWin()) nextTurn();
-        }
-
-        function nextTurn() {
-            let loopCount = 0;
-            do {
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-                loopCount++;
-                if(loopCount > 10) break; // 防死循环
-            } while(!isPlayerAlive(players[currentPlayerIndex].id));
-
-            updateUI(); isAnimating = false; checkAITurn();
+            
+            // 简单胜利判定
+            let activePlayers = new Set();
+            let totalDots = 0;
+            for(let row=0; row<ROWS; row++){
+                for(let col=0; col<COLS; col++){
+                    if(grid[row][col].dots > 0) { totalDots++; activePlayers.add(grid[row][col].player); }
+                }
+            }
+            
+            if(totalDots > 0 && activePlayers.size === 1) {
+                const winner = Array.from(activePlayers)[0];
+                document.getElementById('status-bar').innerText = `🏆 游戏结束！${winner === 0 ? '🟡 黄方' : '🔵 蓝方'} 获胜！`;
+                isAnimating = true; // 锁定棋盘
+            } else {
+                currentPlayerIndex = (currentPlayerIndex + 1) % 2;
+                updateUI();
+                isAnimating = false;
+            }
         }
 
         function renderCell(r, c) {
@@ -303,7 +243,7 @@
 
             const positions = getPositions(cell.dots);
             cell.dotElements.forEach((dot, index) => {
-                dot.innerText = currentSkin[cell.player];
+                dot.innerText = cell.player === 0 ? '🟡' : '🔵';
                 if (positions[index]) {
                     dot.style.left = positions[index].left; dot.style.top = positions[index].top;
                 }
@@ -332,141 +272,38 @@
                 if (toExplode.length > 0) {
                     exploding = true;
                     await new Promise(resolve => setTimeout(resolve, 250)); 
-                    
                     for (let t of toExplode) {
                         grid[t.r][t.c].dots -= grid[t.r][t.c].limit;
                         if (grid[t.r][t.c].dots === 0) grid[t.r][t.c].player = null;
                         renderCell(t.r, t.c);
-
                         const neighbors = [[t.r-1, t.c], [t.r+1, t.c], [t.r, t.c-1], [t.r, t.c+1]];
                         for (let n of neighbors) {
                             const nr = n[0], nc = n[1];
                             if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-                                grid[nr][nc].player = t.player;
-                                grid[nr][nc].dots++;
-                                renderCell(nr, nc);
+                                grid[nr][nc].player = t.player; grid[nr][nc].dots++; renderCell(nr, nc);
                             }
                         }
                     }
                 }
             }
-        }
-
-        async function checkAITurn() {
-            const p = players[currentPlayerIndex];
-            if (p.type !== 'ai' || gameEnded) return;
-            isAnimating = true; 
-            await new Promise(resolve => setTimeout(resolve, 600)); 
-
-            let validMoves = [];
-            for(let r=0; r<ROWS; r++) {
-                for(let c=0; c<COLS; c++) {
-                    if(grid[r][c].player === null || grid[r][c].player === p.id) validMoves.push({r, c});
-                }
-            }
-            
-            // 安全机制：如果AI真的无路可走，跳过
-            if(validMoves.length === 0) {
-                isAnimating = false; nextTurn(); return;
-            }
-            
-            let move;
-            if (p.diff === 'easy') {
-                move = validMoves[Math.floor(Math.random() * validMoves.length)];
-            } else if (p.diff === 'medium') {
-                validMoves.sort((a,b) => (grid[a.r][a.c].limit - grid[a.r][a.c].dots) - (grid[b.r][b.c].limit - grid[b.r][b.c].dots));
-                move = validMoves[0];
-            } else {
-                let bestScore = -9999;
-                for (let m of validMoves) {
-                    let score = 0;
-                    let cell = grid[m.r][m.c];
-                    let willExplode = (cell.dots + (firstMove[p.id] ? 3 : 1)) >= cell.limit;
-                    if (willExplode) score += 100;
-                    if (cell.limit === 2) score += 20; 
-                    if (cell.limit === 3) score += 5;
-                    
-                    const neighbors = [[m.r-1, m.c], [m.r+1, m.c], [m.r, m.c-1], [m.r, m.c+1]];
-                    for (let n of neighbors) {
-                        const nr = n[0], nc = n[1];
-                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-                            let nCell = grid[nr][nc];
-                            if (nCell.player !== null && nCell.player !== p.id && nCell.dots + 1 === nCell.limit) {
-                                score -= 50; 
-                            }
-                        }
-                    }
-                    score += Math.random() * 5; 
-                    if (score > bestScore) { bestScore = score; move = m; }
-                }
-            }
-            isAnimating = false; 
-            handleCellClick(move.r, move.c, false);
-        }
-
-        // 🚨 核心 Bug 修复：更严谨的胜利判定
-        function checkWin() {
-            let activeCount = 0;
-            let lastAlive = null;
-            players.forEach(p => {
-                if(isPlayerAlive(p.id)) { activeCount++; lastAlive = p.id; }
-            });
-
-            // 统计场上总棋子数，防止开局没人下子时误判
-            let totalDots = 0;
-            for(let r=0; r<ROWS; r++) {
-                for(let c=0; c<COLS; c++) {
-                    if(grid[r][c].dots > 0) totalDots++;
-                }
-            }
-
-            if(activeCount === 1 && totalDots > 0) {
-                gameEnded = true;
-                setTimeout(() => showVictory(lastAlive), 600); // 等炸完再弹窗
-                return true;
-            }
-            return false;
-        }
-
-        function showVictory(winnerId) {
-            const vs = document.getElementById('victory-screen');
-            const vc = document.getElementById('victory-card');
-            
-            document.getElementById('winner-icon').innerText = currentSkin[winnerId];
-            document.getElementById('winner-name').innerText = `${colorNames[winnerId]} 傲视群雄！`;
-            vc.style.background = `linear-gradient(135deg, rgba(30,30,35,0.9), rgba(${rgbColors[winnerId]}, 0.3))`;
-
-            vs.style.display = 'flex';
-            requestAnimationFrame(() => { requestAnimationFrame(() => { vs.style.opacity = '1'; vc.classList.add('show'); }); });
-        }
-
-        function playAgain() { hideVictory(); initBoard(); }
-
-        function backToMenu() {
-            hideVictory();
-            document.getElementById('status-bar').style.display = 'none';
-            document.getElementById('board-container').style.display = 'none';
-            const setup = document.getElementById('setup-screen');
-            setup.style.display = 'flex';
-            requestAnimationFrame(() => { setup.style.opacity = '1'; document.getElementById('setup-card').classList.add('show'); });
-        }
-
-        function hideVictory() {
-            const vs = document.getElementById('victory-screen');
-            const vc = document.getElementById('victory-card');
-            vs.style.opacity = '0'; vc.classList.remove('show');
-            setTimeout(() => { vs.style.display = 'none'; }, 500);
         }
 
         function updateUI() {
             const bar = document.getElementById('status-bar');
-            const p = players[currentPlayerIndex];
-            bar.className = `color-${p.id}`;
-            let typeName = p.type === 'human' ? '人类' : 'AI';
-            bar.innerText = `👉 轮到 ${currentSkin[p.id]} 方 (${typeName})`;
+            bar.className = `color-${currentPlayerIndex}`;
+            
+            let turnText = currentPlayerIndex === 0 ? '🟡 黄方' : '🔵 蓝方';
+            
+            if (isOnlineMode) {
+                if (currentPlayerIndex === myNetworkId) {
+                    bar.innerText = `👉 你的回合 (${turnText})`;
+                } else {
+                    bar.innerText = `⏳ 等待对手下棋... (${turnText})`;
+                }
+            } else {
+                bar.innerText = `👉 轮到 ${turnText} 的回合`;
+            }
         }
-
-        initSetup();
     </script>
 </body>
 </html>
