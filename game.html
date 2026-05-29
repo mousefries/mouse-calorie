@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>领地战 究极版 ✨</title>
+    <title>领地战 典藏版 ✨</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
     <style>
         /* 🌌 苹果风深邃背景 */
         body { margin: 0; padding: 0; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #1c1c1e 0%, #2c2c34 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; color: white; overflow: hidden; }
 
-        /* 📋 模态框通用样式 (毛玻璃) */
+        /* 📋 模态框通用样式 */
         .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; transition: opacity 0.4s ease; }
         .modal-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); padding: 30px; border-radius: 28px; width: 85%; max-width: 420px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .modal-card.show { transform: scale(1); }
@@ -17,13 +17,11 @@
         .setup-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         select { background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-size: 1rem; outline: none; }
         
-        /* 按钮组 */
         .btn { width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 16px; cursor: pointer; transition: 0.2s; margin-top: 10px; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.2);}
         .btn:active { transform: scale(0.95); }
         .btn-local { background: #FF9F0A; }
         .btn-host { background: #0A84FF; }
         .btn-join { background: #30D158; }
-        .btn-tut { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; padding: 12px;}
 
         input { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 1.5rem; text-align: center; font-weight: bold; margin-top: 10px; background: rgba(0,0,0,0.5); color: #FFCC00; outline: none; text-transform: uppercase; box-sizing: border-box; }
 
@@ -36,10 +34,16 @@
         .dot { position: absolute; width: 30px; height: 30px; margin-top: -15px; margin-left: -15px; display: flex; justify-content: center; align-items: center; font-size: 24px; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); transform: scale(0); opacity: 0; pointer-events: none; }
         .dot.show { transform: scale(1); opacity: 1; }
 
-        /* 🏆 结算弹窗 */
-        .winner-icon { font-size: 6rem; margin-bottom: 10px; animation: winnerBounce 2s infinite ease-in-out; text-shadow: 0 15px 30px rgba(0,0,0,0.6); }
-        .winner-text { font-size: 2rem; font-weight: 800; margin-bottom: 30px; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.5); letter-spacing: 2px; }
-        @keyframes winnerBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
+        /* 🏆 豪华结算弹窗 & 满屏撒花动画 */
+        #victory-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 999; opacity: 0; transition: opacity 0.6s ease; overflow: hidden;}
+        .victory-card { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); padding: 40px; border-radius: 35px; width: 85%; max-width: 380px; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); transform: scale(0.5) translateY(50px); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1000;}
+        .victory-card.show { transform: scale(1) translateY(0); }
+        .winner-icon { font-size: 7rem; margin-bottom: 15px; animation: winnerBounce 1.5s infinite ease-in-out; text-shadow: 0 20px 40px rgba(0,0,0,0.7); }
+        .winner-text { font-size: 2.2rem; font-weight: 900; margin-bottom: 35px; color: white; text-shadow: 0 5px 15px rgba(0,0,0,0.6); letter-spacing: 2px; }
+        @keyframes winnerBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-20px) scale(1.1); } }
+        
+        .confetti { position: absolute; width: 12px; height: 12px; opacity: 0.9; animation: fall linear forwards; border-radius: 3px;}
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
         /* 颜色 */
         .color-0 { background-color: #FFCC00 !important; color: #000; }
@@ -50,10 +54,10 @@
 </head>
 <body>
 
+    <!-- 🌐 究极大厅 -->
     <div id="lobby-screen" class="modal-overlay">
         <div class="modal-card show" id="lobby-card">
-            <h2 style="text-align: center; margin-top: 0;">🎮 究极领地战</h2>
-            
+            <h2 style="text-align: center; margin-top: 0;">🎮 领地战典藏版</h2>
             <div class="setup-row">
                 <span style="font-weight: bold;">🎨 全局皮肤：</span>
                 <select id="skin-select">
@@ -63,37 +67,45 @@
                     <option value="3">元素魔法 ⚡️💧🍃🔥</option>
                 </select>
             </div>
-            
+            <div class="setup-row" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                <span style="font-weight: bold; color: #30D158;">👥 参战人数：</span>
+                <select id="player-count" onchange="updatePlayerUI()">
+                    <option value="2" selected>2 人对决 (1v1)</option>
+                    <option value="3">3 人混战 (1v1v1)</option>
+                    <option value="4">4 人大乱斗！</option>
+                </select>
+            </div>
             <div id="players-config"></div>
-
             <button class="btn btn-local" onclick="startLocalGame()">🕹️ 开始本地/AI对战</button>
             <div style="display:flex; gap:10px; margin-top: 10px;">
                 <button class="btn btn-host" onclick="hostOnlineGame()">🏠 创建房间</button>
                 <button class="btn btn-join" onclick="showJoinMenu()">🚀 加入房间</button>
             </div>
-            
             <div id="net-status" style="margin-top: 15px; color: #FFCC00; font-weight: bold; text-align: center;"></div>
         </div>
     </div>
 
+    <!-- 接入房间 -->
     <div id="join-screen" class="modal-overlay" style="display:none; opacity:0;">
         <div class="modal-card">
             <h2 style="text-align: center; margin-top: 0;">🚀 接入战场</h2>
             <input type="text" id="room-input" placeholder="输入4位房间号" maxlength="4">
             <button class="btn btn-join" onclick="joinOnlineGame()">🔗 立即连线</button>
-            <button class="btn btn-tut" onclick="hideJoinMenu()">返回大厅</button>
+            <button class="btn" style="background: rgba(255,255,255,0.15);" onclick="hideJoinMenu()">返回大厅</button>
             <div id="join-status" style="margin-top: 15px; color: #FFCC00; font-weight: bold; text-align: center;"></div>
         </div>
     </div>
 
+    <!-- 游戏区域 -->
     <div id="status-bar" style="display: none;"></div>
     <div id="board-container" style="display: none;"><div id="board"></div></div>
 
-    <div id="victory-screen" class="modal-overlay" style="display:none; opacity:0; z-index:100;">
-        <div class="modal-card" id="victory-card" style="text-align:center;">
+    <!-- 🏆 豪华结算弹窗 -->
+    <div id="victory-screen">
+        <div class="victory-card" id="victory-card">
             <div class="winner-icon" id="winner-icon">🏆</div>
             <div class="winner-text" id="winner-name">获胜！</div>
-            <button class="btn" onclick="location.reload()" style="background: white; color: #1c1c1e;">返回大厅 🏠</button>
+            <button class="btn" onclick="location.reload()" style="background: white; color: #1c1c1e; font-size: 1.3rem;">返回大厅 🏠</button>
         </div>
     </div>
 
@@ -102,107 +114,81 @@
         let grid = [], isAnimating = false, gameEnded = false;
         let players = [], currentPlayerIndex = 0, firstMove = {}; 
         
-        const skins = [
-            ['🟡', '🔵', '🟢', '🔴'], ['🐹', '🐱', '🐶', '🐰'],
-            ['🍟', '🍕', '🍔', '🥤'], ['⚡️', '💧', '🍃', '🔥']
-        ];
-        let currentSkinIndex = 0;
-        let currentSkin = skins[0];
+        const skins = [['🟡','🔵','🟢','🔴'], ['🐹','🐱','🐶','🐰'], ['🍟','🍕','🍔','🥤'], ['⚡️','💧','🍃','🔥']];
+        const colorNames = ['黄方', '蓝方', '绿方', '红方'];
+        let currentSkinIndex = 0, currentSkin = skins[0];
 
-        // --- 🌐 网络模块核心状态 ---
-        let peer = null, conn = null;
-        let isOnlineMode = false, isHost = false;
-        let joinTimeout = null;
+        // --- 🌐 网络变量 ---
+        let peer = null, conn = null, isOnlineMode = false, isHost = false, joinTimeout = null;
 
-        // 初始化配置UI
-        function initSetup() {
+        function updatePlayerUI() {
+            const count = parseInt(document.getElementById('player-count').value);
             const container = document.getElementById('players-config');
-            const colors = ['🟡 1号', '🔵 2号', '🟢 3号', '🔴 4号'];
-            for(let i=0; i<4; i++) {
+            container.innerHTML = '';
+            for(let i=0; i<count; i++) {
                 container.innerHTML += `
-                    <div class="setup-row">
-                        <span style="font-weight:bold;">${colors[i]}方：</span>
+                    <div class="setup-row" style="border-bottom: none; margin-bottom: 5px;">
+                        <span>${currentSkin[i]} ${colorNames[i]}：</span>
                         <select id="p${i}-type">
                             ${i===0 ? '<option value="human">👤 我(人类)</option>' : '<option value="human">👤 人类</option>'}
                             <option value="ai-easy">🤖 AI (智障)</option>
                             <option value="ai-medium">🤖 AI (普通)</option>
-                            <option value="ai-hard">🧠 AI (深思)</option>
-                            ${i > 1 ? '<option value="none" selected>❌ 关闭</option>' : ''}
+                            <option value="ai-hard" ${i>0 ? 'selected' : ''}>🧠 AI (深思)</option>
                         </select>
-                    </div>
-                `;
+                    </div>`;
             }
         }
 
-        // 🕹️ 模式1：本地/AI 对战
-        function startLocalGame() {
-            parseSettings();
-            isOnlineMode = false;
-            launchGameUI();
+        function parseSettings() {
+            currentSkinIndex = document.getElementById('skin-select').value;
+            currentSkin = skins[currentSkinIndex];
+            players = []; firstMove = {};
+            const count = parseInt(document.getElementById('player-count').value);
+            for(let i=0; i<count; i++) {
+                players.push({ id: i, type: document.getElementById(`p${i}-type`).value.split('-')[0], diff: document.getElementById(`p${i}-type`).value.split('-')[1] || null });
+            }
         }
 
-        // 🏠 模式2：做主机
+        function startLocalGame() { parseSettings(); isOnlineMode = false; launchGameUI(); }
+
         function hostOnlineGame() {
-            parseSettings();
-            isOnlineMode = true; isHost = true;
-            
-            // 强制将2号位设为异地玩家 (不计算AI)
+            parseSettings(); isOnlineMode = true; isHost = true;
             const p2 = players.find(p => p.id === 1);
             if(p2) p2.type = 'remote'; 
-            else players.push({id: 1, type: 'remote', diff: null});
             
             const statusEl = document.getElementById('net-status');
             statusEl.innerText = "正在开启星际网关...";
             const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
             
             peer = new Peer('MOUSE' + roomCode);
-            peer.on('open', id => {
-                statusEl.innerHTML = `房间建立完毕！<br><span style="font-size:2.5rem; color:white;">${roomCode}</span><br>等待朋友接入...`;
-            });
+            peer.on('open', id => { statusEl.innerHTML = `房间建立完毕！<br><span style="font-size:2.5rem; color:white;">${roomCode}</span><br>⏳ 5分钟内可接入...`; });
             peer.on('connection', connection => {
                 conn = connection;
                 conn.on('open', () => {
                     statusEl.innerText = "朋友已接入！正在同步战局...";
-                    // 将皮肤和玩家配置同步给朋友
                     conn.send({ type: 'init', skinIndex: currentSkinIndex, players: players });
-                    setupNetworkListeners();
-                    setTimeout(launchGameUI, 1000);
+                    setupNetworkListeners(); setTimeout(launchGameUI, 1000);
                 });
             });
             peer.on('error', err => { statusEl.innerText = "网络错误: " + err.type; });
         }
 
-        // 🚀 模式3：加入房间
-        function showJoinMenu() {
-            document.getElementById('join-screen').style.display = 'flex';
-            requestAnimationFrame(()=> document.getElementById('join-screen').style.opacity = '1');
-        }
-        function hideJoinMenu() {
-            document.getElementById('join-screen').style.opacity = '0';
-            setTimeout(()=> document.getElementById('join-screen').style.display = 'none', 300);
-        }
+        function showJoinMenu() { document.getElementById('join-screen').style.display = 'flex'; requestAnimationFrame(()=> document.getElementById('join-screen').style.opacity = '1'); }
+        function hideJoinMenu() { document.getElementById('join-screen').style.opacity = '0'; setTimeout(()=> document.getElementById('join-screen').style.display = 'none', 300); }
 
         function joinOnlineGame() {
             const code = document.getElementById('room-input').value.trim();
             const statusEl = document.getElementById('join-status');
             if(code.length !== 4) { statusEl.innerText = "请输入4位房间号！"; return; }
-
-            statusEl.innerText = "正在跃迁至主机...";
-            peer = new Peer();
+            statusEl.innerText = "正在跃迁至主机..."; peer = new Peer();
             
-            // 🚨 超时断开功能
-            joinTimeout = setTimeout(() => {
-                peer.destroy();
-                statusEl.innerText = "连接超时！请检查房间号是否正确。";
-            }, 10000);
+            joinTimeout = setTimeout(() => { peer.destroy(); statusEl.innerText = "连接超时 (5分钟未响应)！请确认房间号是否正确。"; }, 300000); 
 
             peer.on('open', () => {
                 conn = peer.connect('MOUSE' + code);
                 conn.on('open', () => {
-                    clearTimeout(joinTimeout);
-                    statusEl.innerText = "连接成功！等待主机同步数据...";
-                    isOnlineMode = true; isHost = false;
-                    setupNetworkListeners();
+                    clearTimeout(joinTimeout); statusEl.innerText = "连接成功！等待主机同步数据...";
+                    isOnlineMode = true; isHost = false; setupNetworkListeners();
                 });
             });
             peer.on('error', err => { clearTimeout(joinTimeout); statusEl.innerText = "未找到房间或网络断开！"; });
@@ -210,31 +196,9 @@
 
         function setupNetworkListeners() {
             conn.on('data', data => {
-                if(data.type === 'init' && !isHost) {
-                    // 客机收到主机的配置
-                    currentSkinIndex = data.skinIndex;
-                    currentSkin = skins[currentSkinIndex];
-                    players = data.players;
-                    launchGameUI();
-                }
-                if(data.type === 'click') {
-                    // 收到网络点击指令，直接执行
-                    executeClick(data.r, data.c);
-                }
+                if(data.type === 'init' && !isHost) { currentSkinIndex = data.skinIndex; currentSkin = skins[currentSkinIndex]; players = data.players; launchGameUI(); }
+                if(data.type === 'click') { executeClick(data.r, data.c); }
             });
-        }
-
-        // 解析UI设置
-        function parseSettings() {
-            currentSkinIndex = document.getElementById('skin-select').value;
-            currentSkin = skins[currentSkinIndex];
-            players = []; firstMove = {};
-            for(let i=0; i<4; i++) {
-                const val = document.getElementById(`p${i}-type`).value;
-                if(val !== 'none') {
-                    players.push({ id: i, type: val.split('-')[0], diff: val.split('-')[1] || null });
-                }
-            }
         }
 
         function launchGameUI() {
@@ -246,7 +210,6 @@
         }
 
         // --- 🎮 核心游戏引擎 ---
-
         function initBoard() {
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = ''; grid = [];
@@ -254,8 +217,7 @@
                 let row = [];
                 for (let c = 0; c < COLS; c++) {
                     const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    cellEl.onclick = () => onCellClicked(r, c); // 玩家点击入口
+                    cellEl.className = 'cell'; cellEl.onclick = () => onCellClicked(r, c); 
                     boardEl.appendChild(cellEl);
                     row.push({ player: null, dots: 0, limit: getLimit(r, c), element: cellEl, dotElements: [] });
                 }
@@ -266,50 +228,32 @@
             updateUI(); checkAITurn();
         }
 
-        function getLimit(r, c) {
-            let limit = 4;
-            if (r === 0 || r === ROWS - 1) limit--;
-            if (c === 0 || c === COLS - 1) limit--;
-            return limit;
-        }
+        function getLimit(r, c) { let limit = 4; if (r === 0 || r === ROWS - 1) limit--; if (c === 0 || c === COLS - 1) limit--; return limit; }
 
+        // 🚨 绝对严谨的生存检测：还没下过棋？或者棋盘上有你的棋子？算你活着！
         function isPlayerAlive(pid) {
-            let hasPieces = false, hasEmpty = false;
+            if (firstMove[pid]) return true; 
             for(let r=0; r<ROWS; r++) {
                 for(let c=0; c<COLS; c++) {
-                    if(grid[r][c].player === pid) hasPieces = true;
-                    if(grid[r][c].player === null) hasEmpty = true;
+                    if(grid[r][c].player === pid) return true;
                 }
             }
-            if (hasPieces) return true;
-            if (firstMove[pid] && hasEmpty) return true; 
             return false;
         }
 
-        // 🖱️ 玩家在屏幕上的真实点击逻辑
         function onCellClicked(r, c) {
             if (isAnimating || gameEnded) return;
             const p = players[currentPlayerIndex];
-            
-            // 权限校验：如果是联机模式
-            if (isOnlineMode) {
-                if (isHost && p.id !== 0) return; // 主机只能帮自己点
-                if (!isHost && p.id !== 1) return; // 客机只能帮自己点
-            } else {
-                if (p.type !== 'human') return; // 本地模式不能帮AI点
-            }
+            if (isOnlineMode) { if (isHost && p.id !== 0) return; if (!isHost && p.id !== 1) return; } 
+            else { if (p.type !== 'human') return; }
 
             const cell = grid[r][c];
-            if (cell.player !== null && cell.player !== p.id) return; // 只能下自己或空的
+            if (cell.player !== null && cell.player !== p.id) return; 
 
-            // 自己检验通过，通过网络告诉对方
             if (isOnlineMode && conn) conn.send({type: 'click', r: r, c: c});
-            
-            // 在本地执行
             executeClick(r, c);
         }
 
-        // ⚡️ 核心执行器 (本地、AI、网络 都会调用这个)
         async function executeClick(r, c) {
             const pId = players[currentPlayerIndex].id;
             const cell = grid[r][c];
@@ -318,9 +262,7 @@
             firstMove[pId] = false; 
 
             cell.player = pId;
-            for(let i = 0; i < dotsToAdd; i++) {
-                cell.dots++; renderCell(r, c);
-            }
+            for(let i = 0; i < dotsToAdd; i++) { cell.dots++; renderCell(r, c); }
 
             isAnimating = true;
             await checkExplosions();
@@ -331,36 +273,30 @@
             let loopCount = 0;
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-                loopCount++;
-                if(loopCount > 10) break;
+                loopCount++; if(loopCount > 10) break;
             } while(!isPlayerAlive(players[currentPlayerIndex].id));
 
             updateUI(); isAnimating = false; checkAITurn();
         }
 
         function renderCell(r, c) {
-            const cell = grid[r][c];
-            const el = cell.element;
+            const cell = grid[r][c]; const el = cell.element;
             el.className = cell.dots > 0 ? `cell color-${cell.player}` : 'cell';
 
             while (cell.dotElements.length < cell.dots) {
-                const dot = document.createElement('div');
-                dot.className = 'dot'; el.appendChild(dot);
+                const dot = document.createElement('div'); dot.className = 'dot'; el.appendChild(dot);
                 requestAnimationFrame(() => requestAnimationFrame(() => dot.classList.add('show')));
                 cell.dotElements.push(dot);
             }
             while (cell.dotElements.length > cell.dots) {
-                const dot = cell.dotElements.pop();
-                dot.classList.remove('show');
+                const dot = cell.dotElements.pop(); dot.classList.remove('show');
                 setTimeout(() => dot.remove(), 300);
             }
 
             const positions = getPositions(cell.dots);
             cell.dotElements.forEach((dot, index) => {
                 dot.innerText = currentSkin[cell.player];
-                if (positions[index]) {
-                    dot.style.left = positions[index].left; dot.style.top = positions[index].top;
-                }
+                if (positions[index]) { dot.style.left = positions[index].left; dot.style.top = positions[index].top; }
             });
         }
 
@@ -375,29 +311,23 @@
         async function checkExplosions() {
             let exploding = true;
             while (exploding) {
-                exploding = false;
-                let toExplode = [];
+                exploding = false; let toExplode = [];
                 for (let r = 0; r < ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         if (grid[r][c].dots >= grid[r][c].limit) toExplode.push({r, c, player: grid[r][c].player});
                     }
                 }
-
                 if (toExplode.length > 0) {
-                    exploding = true;
-                    await new Promise(resolve => setTimeout(resolve, 250)); 
+                    exploding = true; await new Promise(resolve => setTimeout(resolve, 250)); 
                     for (let t of toExplode) {
                         grid[t.r][t.c].dots -= grid[t.r][t.c].limit;
                         if (grid[t.r][t.c].dots === 0) grid[t.r][t.c].player = null;
                         renderCell(t.r, t.c);
-
                         const neighbors = [[t.r-1, t.c], [t.r+1, t.c], [t.r, t.c-1], [t.r, t.c+1]];
                         for (let n of neighbors) {
                             const nr = n[0], nc = n[1];
                             if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-                                grid[nr][nc].player = t.player;
-                                grid[nr][nc].dots++;
-                                renderCell(nr, nc);
+                                grid[nr][nc].player = t.player; grid[nr][nc].dots++; renderCell(nr, nc);
                             }
                         }
                     }
@@ -405,16 +335,12 @@
             }
         }
 
-        // --- 🧠 AI 引擎 (只有主机计算AI) ---
         async function checkAITurn() {
             const p = players[currentPlayerIndex];
             if (p.type !== 'ai' || gameEnded) return;
-            
-            // 🚨 联机模式下，客机不计算AI，纯靠主机发指令
             if (isOnlineMode && !isHost) return; 
 
-            isAnimating = true; 
-            await new Promise(resolve => setTimeout(resolve, 700)); 
+            isAnimating = true; await new Promise(resolve => setTimeout(resolve, 700)); 
 
             let validMoves = [];
             for(let r=0; r<ROWS; r++) {
@@ -435,8 +361,7 @@
                     let score = 0; let cell = grid[m.r][m.c];
                     let willExplode = (cell.dots + (firstMove[p.id] ? 3 : 1)) >= cell.limit;
                     if (willExplode) score += 100;
-                    if (cell.limit === 2) score += 20; 
-                    if (cell.limit === 3) score += 5;
+                    if (cell.limit === 2) score += 20; if (cell.limit === 3) score += 5;
                     
                     const neighbors = [[m.r-1, m.c], [m.r+1, m.c], [m.r, m.c-1], [m.r, m.c+1]];
                     for (let n of neighbors) {
@@ -451,43 +376,63 @@
                 }
             }
 
-            // AI 计算完毕，如果是联机，主机要把AI的动作发给客机
             if (isOnlineMode && isHost) conn.send({type: 'click', r: move.r, c: move.c});
-            
-            // 执行 AI 动作
             executeClick(move.r, move.c);
         }
 
-        // --- 🏆 裁判系统 (修复了单机扫雷Bug) ---
+        // 🚨 重构的绝对完美裁判系统
         function checkWin() {
-            let activeCount = 0; let lastAlive = null;
-            let allFirstMovesDone = true; // 🚨 核心修复：检查是否所有人都下过了首回合
+            let activePlayers = new Set();
+            let totalDots = 0;
             
-            players.forEach(p => {
-                if(isPlayerAlive(p.id)) { activeCount++; lastAlive = p.id; }
-                if(firstMove[p.id]) allFirstMovesDone = false; 
-            });
+            // 扫描棋盘上所有的势力
+            for(let r=0; r<ROWS; r++) {
+                for(let c=0; c<COLS; c++) {
+                    if(grid[r][c].player !== null) {
+                        activePlayers.add(grid[r][c].player);
+                        totalDots++;
+                    }
+                }
+            }
 
-            // 必须场上只剩一人，并且所有人都走过第一步了，才算赢！
-            if(activeCount === 1 && allFirstMovesDone) {
+            // 检查是不是还有人没下第一步
+            let anyFirstMovePending = false;
+            players.forEach(p => { if (firstMove[p.id]) anyFirstMovePending = true; });
+
+            // 只有当：棋盘上有子 + 只有一家势力 + 所有人都下过棋了，才算赢！
+            if (totalDots > 0 && activePlayers.size === 1 && !anyFirstMovePending) {
                 gameEnded = true;
-                setTimeout(() => showVictory(lastAlive), 600); 
+                let winner = Array.from(activePlayers)[0];
+                setTimeout(() => showVictory(winner), 500);
                 return true;
             }
             return false;
         }
 
+        // 🏆 绝美满屏撒花动画！
         function showVictory(winnerId) {
             const vs = document.getElementById('victory-screen');
             const vc = document.getElementById('victory-card');
             const rgbColors = ['255,204,0', '10,132,255', '48,209,88', '255,69,58'];
-            const colorNames = ['1号', '2号', '3号', '4号'];
             
             document.getElementById('winner-icon').innerText = currentSkin[winnerId];
-            document.getElementById('winner-name').innerText = `${colorNames[winnerId]}方 傲视群雄！`;
-            vc.style.background = `linear-gradient(135deg, rgba(30,30,35,0.9), rgba(${rgbColors[winnerId]}, 0.4))`;
+            document.getElementById('winner-name').innerText = `${colorNames[winnerId]} 傲视群雄！`;
+            vc.style.background = `linear-gradient(135deg, rgba(30,30,35,0.9), rgba(${rgbColors[winnerId]}, 0.5))`;
 
             vs.style.display = 'flex';
+            
+            // 魔法彩纸生成器
+            for(let i=0; i<60; i++) {
+                let conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-20px';
+                conf.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 60%)`;
+                conf.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                conf.style.animationDelay = (Math.random() * 1) + 's';
+                vs.appendChild(conf);
+            }
+
             requestAnimationFrame(() => { requestAnimationFrame(() => { vs.style.opacity = '1'; vc.classList.add('show'); }); });
         }
 
@@ -495,24 +440,20 @@
             const bar = document.getElementById('status-bar');
             const p = players[currentPlayerIndex];
             bar.className = `color-${p.id}`;
-            
             let turnText = currentSkin[p.id] + '方';
             
             if (isOnlineMode) {
-                if ((isHost && p.id === 0) || (!isHost && p.id === 1)) {
-                    bar.innerText = `👉 你的回合 (${turnText})`;
-                } else if (p.type === 'ai') {
-                    bar.innerText = `🤖 AI思考中... (${turnText})`;
-                } else {
-                    bar.innerText = `⏳ 等待对手下棋... (${turnText})`;
-                }
+                if ((isHost && p.id === 0) || (!isHost && p.id === 1)) bar.innerText = `👉 你的回合 (${turnText})`;
+                else if (p.type === 'ai') bar.innerText = `🤖 AI思考中... (${turnText})`;
+                else bar.innerText = `⏳ 等待对手下棋... (${turnText})`;
             } else {
                 let typeName = p.type === 'human' ? '人类' : 'AI';
                 bar.innerText = `👉 轮到 ${turnText} (${typeName})`;
             }
         }
 
-        initSetup();
+        updatePlayerUI();
+        document.getElementById('skin-select').addEventListener('change', updatePlayerUI);
     </script>
 </body>
 </html>
