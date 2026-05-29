@@ -15,7 +15,7 @@
             overflow: hidden;
         }
 
-        /* 📋 赛前大厅 & 教程弹窗 (通用毛玻璃) */
+        /* 📋 通用毛玻璃模态框 (大厅 & 教程 & 结算) */
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
@@ -114,7 +114,6 @@
             </div>
             <div id="players-config"></div>
             
-            <!-- 新增教程按钮 -->
             <button class="btn tut-btn" onclick="showTutorial()">❓ 不会玩？点击查看极简教程</button>
             <button class="btn start-btn" onclick="startGame()">开始战斗 🔥</button>
         </div>
@@ -124,20 +123,9 @@
     <div id="tutorial-screen" class="modal-overlay" style="display: none; opacity: 0; z-index: 60;">
         <div class="modal-card" id="tutorial-card">
             <h2 style="text-align: center; margin-top: 0; margin-bottom: 20px;">📜 极简玩法指南</h2>
-            
-            <div class="tutorial-step">
-                <div class="tut-title">1️⃣ 抢地盘 (首局送3子)</div>
-                只能点击<b>空白格子</b>或<b>你自己的格子</b>。首回合点一下直接放3个子，之后每次放1个！
-            </div>
-            <div class="tutorial-step">
-                <div class="tut-title">2️⃣ 撑爆它 (核心机制 💥)</div>
-                格子有容量上限：<b>角落2个，边缘3个，中间4个</b>。装满就会向四周爆炸飞溅！
-            </div>
-            <div class="tutorial-step">
-                <div class="tut-title">3️⃣ 疯狂吞噬 (赢取胜利 🏆)</div>
-                爆炸飞出的棋子如果碰到敌人的格子，会瞬间<b>把敌人的地盘染成你的颜色</b>！把所有人吃光就赢了！
-            </div>
-
+            <div class="tutorial-step"><div class="tut-title">1️⃣ 抢地盘 (首局送3子)</div>只能点击<b>空白格子</b>或<b>你自己的格子</b>。首回合点一下直接放3个子，之后每次放1个！</div>
+            <div class="tutorial-step"><div class="tut-title">2️⃣ 撑爆它 (核心机制 💥)</div>格子有容量上限：<b>角落2个，边缘3个，中间4个</b>。装满就会向四周爆炸飞溅！</div>
+            <div class="tutorial-step"><div class="tut-title">3️⃣ 疯狂吞噬 (赢取胜利 🏆)</div>爆炸飞出的棋子如果碰到敌人的格子，会瞬间<b>把敌人的地盘染成你的颜色</b>！把所有人吃光就赢了！</div>
             <button class="btn start-btn" onclick="hideTutorial()" style="margin-top: 10px;">我懂了，去大杀四方！</button>
         </div>
     </div>
@@ -171,24 +159,16 @@
         const colorNames = ['黄方', '蓝方', '绿方', '红方'];
         let currentSkin = skins[0];
 
-        // 教程开关逻辑
         function showTutorial() {
             const tutScreen = document.getElementById('tutorial-screen');
             const tutCard = document.getElementById('tutorial-card');
             tutScreen.style.display = 'flex';
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    tutScreen.style.opacity = '1';
-                    tutCard.classList.add('show');
-                });
-            });
+            requestAnimationFrame(() => { requestAnimationFrame(() => { tutScreen.style.opacity = '1'; tutCard.classList.add('show'); }); });
         }
-
         function hideTutorial() {
             const tutScreen = document.getElementById('tutorial-screen');
             const tutCard = document.getElementById('tutorial-card');
-            tutScreen.style.opacity = '0';
-            tutCard.classList.remove('show');
+            tutScreen.style.opacity = '0'; tutCard.classList.remove('show');
             setTimeout(() => { tutScreen.style.display = 'none'; }, 400);
         }
 
@@ -203,7 +183,7 @@
                             <option value="human">👤 人类</option>
                             <option value="ai-easy">🤖 AI (智障)</option>
                             <option value="ai-medium">🤖 AI (普通)</option>
-                            <option value="ai-hard">🧠 AI (深思)</option>
+                            <option value="ai-hard" selected>🧠 AI (深思)</option>
                             ${i > 1 ? '<option value="none">❌ 关闭</option>' : ''}
                         </select>
                     </div>
@@ -213,8 +193,7 @@
 
         function startGame() {
             currentSkin = skins[document.getElementById('skin-select').value];
-            players = [];
-            firstMove = {};
+            players = []; firstMove = {};
             for(let i=0; i<4; i++) {
                 const val = document.getElementById(`p${i}-type`).value;
                 if(val !== 'none') {
@@ -233,8 +212,7 @@
 
         function initBoard() {
             const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            grid = [];
+            boardEl.innerHTML = ''; grid = [];
             for (let r = 0; r < ROWS; r++) {
                 let row = [];
                 for (let c = 0; c < COLS; c++) {
@@ -246,11 +224,9 @@
                 }
                 grid.push(row);
             }
-            currentPlayerIndex = 0;
-            gameEnded = false;
+            currentPlayerIndex = 0; gameEnded = false;
             players.forEach(p => firstMove[p.id] = true);
-            updateUI();
-            checkAITurn();
+            updateUI(); checkAITurn();
         }
 
         function getLimit(r, c) {
@@ -260,13 +236,20 @@
             return limit;
         }
 
+        // 🚨 核心 Bug 修复：更加严谨的生存判定
         function isPlayerAlive(pid) {
-            if (firstMove[pid]) return true; 
+            let hasPieces = false;
+            let hasEmpty = false;
             for(let r=0; r<ROWS; r++) {
                 for(let c=0; c<COLS; c++) {
-                    if(grid[r][c].player === pid) return true;
+                    if(grid[r][c].player === pid) hasPieces = true;
+                    if(grid[r][c].player === null) hasEmpty = true;
                 }
             }
+            if (hasPieces) return true; // 有子就活着
+            // 如果没子了，但还没用过第一回合，且棋盘还有空地可以下，才算活着
+            if (firstMove[pid] && hasEmpty) return true; 
+            // 否则（没子，或者连下子的空地都被人占光了），直接憋死淘汰！
             return false;
         }
 
@@ -282,8 +265,7 @@
 
             cell.player = p.id;
             for(let i = 0; i < dotsToAdd; i++) {
-                cell.dots++;
-                renderCell(r, c);
+                cell.dots++; renderCell(r, c);
             }
 
             isAnimating = true;
@@ -296,12 +278,10 @@
             do {
                 currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
                 loopCount++;
-                if(loopCount > 10) break;
+                if(loopCount > 10) break; // 防死循环
             } while(!isPlayerAlive(players[currentPlayerIndex].id));
 
-            updateUI();
-            isAnimating = false;
-            checkAITurn();
+            updateUI(); isAnimating = false; checkAITurn();
         }
 
         function renderCell(r, c) {
@@ -311,8 +291,7 @@
 
             while (cell.dotElements.length < cell.dots) {
                 const dot = document.createElement('div');
-                dot.className = 'dot';
-                el.appendChild(dot);
+                dot.className = 'dot'; el.appendChild(dot);
                 requestAnimationFrame(() => requestAnimationFrame(() => dot.classList.add('show')));
                 cell.dotElements.push(dot);
             }
@@ -326,8 +305,7 @@
             cell.dotElements.forEach((dot, index) => {
                 dot.innerText = currentSkin[cell.player];
                 if (positions[index]) {
-                    dot.style.left = positions[index].left;
-                    dot.style.top = positions[index].top;
+                    dot.style.left = positions[index].left; dot.style.top = positions[index].top;
                 }
             });
         }
@@ -347,9 +325,7 @@
                 let toExplode = [];
                 for (let r = 0; r < ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
-                        if (grid[r][c].dots >= grid[r][c].limit) {
-                            toExplode.push({r, c, player: grid[r][c].player});
-                        }
+                        if (grid[r][c].dots >= grid[r][c].limit) toExplode.push({r, c, player: grid[r][c].player});
                     }
                 }
 
@@ -380,7 +356,7 @@
             const p = players[currentPlayerIndex];
             if (p.type !== 'ai' || gameEnded) return;
             isAnimating = true; 
-            await new Promise(resolve => setTimeout(resolve, 700)); 
+            await new Promise(resolve => setTimeout(resolve, 600)); 
 
             let validMoves = [];
             for(let r=0; r<ROWS; r++) {
@@ -388,9 +364,13 @@
                     if(grid[r][c].player === null || grid[r][c].player === p.id) validMoves.push({r, c});
                 }
             }
-            if(validMoves.length === 0) return;
+            
+            // 安全机制：如果AI真的无路可走，跳过
+            if(validMoves.length === 0) {
+                isAnimating = false; nextTurn(); return;
+            }
+            
             let move;
-
             if (p.diff === 'easy') {
                 move = validMoves[Math.floor(Math.random() * validMoves.length)];
             } else if (p.diff === 'medium') {
@@ -424,6 +404,7 @@
             handleCellClick(move.r, move.c, false);
         }
 
+        // 🚨 核心 Bug 修复：更严谨的胜利判定
         function checkWin() {
             let activeCount = 0;
             let lastAlive = null;
@@ -431,9 +412,17 @@
                 if(isPlayerAlive(p.id)) { activeCount++; lastAlive = p.id; }
             });
 
-            if(activeCount === 1) {
+            // 统计场上总棋子数，防止开局没人下子时误判
+            let totalDots = 0;
+            for(let r=0; r<ROWS; r++) {
+                for(let c=0; c<COLS; c++) {
+                    if(grid[r][c].dots > 0) totalDots++;
+                }
+            }
+
+            if(activeCount === 1 && totalDots > 0) {
                 gameEnded = true;
-                setTimeout(() => showVictory(lastAlive), 500); 
+                setTimeout(() => showVictory(lastAlive), 600); // 等炸完再弹窗
                 return true;
             }
             return false;
@@ -448,37 +437,24 @@
             vc.style.background = `linear-gradient(135deg, rgba(30,30,35,0.9), rgba(${rgbColors[winnerId]}, 0.3))`;
 
             vs.style.display = 'flex';
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    vs.style.opacity = '1';
-                    vc.classList.add('show');
-                });
-            });
+            requestAnimationFrame(() => { requestAnimationFrame(() => { vs.style.opacity = '1'; vc.classList.add('show'); }); });
         }
 
-        function playAgain() {
-            hideVictory();
-            initBoard(); 
-        }
+        function playAgain() { hideVictory(); initBoard(); }
 
         function backToMenu() {
             hideVictory();
             document.getElementById('status-bar').style.display = 'none';
             document.getElementById('board-container').style.display = 'none';
-            
             const setup = document.getElementById('setup-screen');
             setup.style.display = 'flex';
-            requestAnimationFrame(() => {
-                setup.style.opacity = '1';
-                document.getElementById('setup-card').classList.add('show');
-            });
+            requestAnimationFrame(() => { setup.style.opacity = '1'; document.getElementById('setup-card').classList.add('show'); });
         }
 
         function hideVictory() {
             const vs = document.getElementById('victory-screen');
             const vc = document.getElementById('victory-card');
-            vs.style.opacity = '0';
-            vc.classList.remove('show');
+            vs.style.opacity = '0'; vc.classList.remove('show');
             setTimeout(() => { vs.style.display = 'none'; }, 500);
         }
 
