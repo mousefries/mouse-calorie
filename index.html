@@ -3,95 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mouse OS ✨</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mouse OS Pro ✨</title>
     <style>
-        /* 🍎 防弹背景：加上了纯色保底，绝对不可能再白屏 */
+        /* 🌌 极简高级深邃背景 (类似 macOS 动态壁纸风格) */
         body {
             margin: 0; padding: 0; height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-            background-color: #1a1a2e; 
-            background-image: linear-gradient(135deg, #111122 0%, #221133 50%, #331122 100%);
-            overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+            background-color: #0f0f13;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(70, 40, 120, 0.4), transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(40, 90, 140, 0.4), transparent 50%);
+            overflow: hidden; 
+            display: flex; flex-direction: column; justify-content: space-between;
             -webkit-user-select: none;
+            color: #ffffff;
         }
 
-        .status-bar { padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 14px; font-weight: 600; background: rgba(0,0,0,0.2); }
-        .live-dot { width: 8px; height: 8px; background: #34C759; border-radius: 50%; animation: blink 2s infinite; }
-        @keyframes blink { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        /* 🔋 iPadOS 原生状态栏 */
+        .status-bar { 
+            padding: 10px 25px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
 
-        .desktop-grid { flex: 1; padding: 40px; display: flex; gap: 35px; align-content: flex-start; flex-wrap: wrap; }
+        /* 🖥️ 桌面网格 */
+        .desktop-grid { 
+            flex: 1; padding: 30px 40px; 
+            display: flex; gap: 30px; align-content: flex-start; flex-wrap: wrap; 
+        }
         
-        .app-icon { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; width: 70px;}
-        .app-icon:active { transform: scale(0.9); }
-        .icon-box { width: 65px; height: 65px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 34px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .icon-text { color: white; font-size: 13px; font-weight: 600; margin-top: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        /* 🍎 图标交互：丝滑呼吸与果冻回弹 */
+        .app-icon { 
+            display: flex; flex-direction: column; align-items: center; 
+            cursor: pointer; width: 70px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        .app-icon:hover { transform: scale(1.05); }
+        .app-icon:active { transform: scale(0.9); transition: transform 0.1s; }
+        
+        /* 拟物化高光图标框 */
+        .icon-box { 
+            width: 62px; height: 62px; 
+            border-radius: 16px; /* 苹果圆角比例 */
+            display: flex; justify-content: center; align-items: center; font-size: 32px; 
+            box-shadow: 
+                0 10px 20px rgba(0,0,0,0.3), 
+                inset 0 1px 1px rgba(255,255,255,0.4); /* 顶部边缘高光 */
+        }
+        .icon-text { 
+            font-size: 12px; font-weight: 400; margin-top: 6px; 
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.3px;
+        }
 
-        .dock-container { padding-bottom: 25px; display: flex; justify-content: center; width: 100%; }
-        .dock { background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 12px 25px; border-radius: 32px; display: flex; gap: 20px; }
+        /* 🧊 顶级毛玻璃 Dock 栏 */
+        .dock-container { padding-bottom: 20px; display: flex; justify-content: center; width: 100%; z-index: 10; }
+        .dock { 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(25px) saturate(180%); 
+            -webkit-backdrop-filter: blur(25px) saturate(180%); 
+            padding: 12px 18px; 
+            border-radius: 28px; 
+            display: flex; gap: 15px; 
+            border: 1px solid rgba(255,255,255,0.15); /* 玻璃边缘白线 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
         .dock .icon-text { display: none; }
-        .dock .icon-box { width: 55px; height: 55px; font-size: 28px; }
+        .dock .icon-box { width: 52px; height: 52px; font-size: 26px; }
 
-        .window-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100; display: none; justify-content: center; align-items: center; opacity: 0; transition: 0.3s; }
-        .window-frame { width: 92%; max-width: 500px; height: 85vh; background: #1c1c38; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: translateY(30px) scale(0.95); transition: 0.3s; }
-        .window-header { height: 45px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; position: relative; }
-        .window-title { font-size: 15px; font-weight: 600; color: white; }
-        .close-btn { position: absolute; right: 15px; width: 26px; height: 26px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; color: white; cursor: pointer; border: none; }
+        /* 🪟 App 窗口系统 (极度平滑的展开动画) */
+        .window-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); 
+            z-index: 100; display: none; justify-content: center; align-items: center; 
+            opacity: 0; transition: opacity 0.4s ease; 
+        }
+        .window-frame { 
+            width: 90%; max-width: 440px; height: 82vh; 
+            background: rgba(30, 30, 35, 0.85); /* 半透明暗色窗口 */
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border-radius: 20px; overflow: hidden; 
+            display: flex; flex-direction: column; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1); 
+            transform: scale(0.95) translateY(20px); 
+            /* 苹果风 Spring 动画曲线 */
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
         
-        iframe { flex: 1; width: 100%; border: none; background: #fff; }
+        /* 🟢 macOS 风格交通灯控制条 */
+        .window-header { 
+            height: 48px; 
+            display: flex; align-items: center; justify-content: center; position: relative; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .window-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.8); letter-spacing: 0.5px; }
+        .traffic-lights {
+            position: absolute; left: 16px;
+            display: flex; gap: 8px;
+        }
+        .light {
+            width: 12px; height: 12px; border-radius: 50%;
+            cursor: pointer; position: relative;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+        }
+        .light.red { background-color: #ff5f56; }
+        .light.yellow { background-color: #ffbd2e; }
+        .light.green { background-color: #27c93f; }
+        
+        /* 鼠标悬停红灯时显示小叉叉 */
+        .light.red:hover::before, .light.red:hover::after {
+            content: ''; position: absolute; top: 5.5px; left: 3px; width: 6px; height: 1px;
+            background: #4d0000; transform: rotate(45deg);
+        }
+        .light.red:hover::after { transform: rotate(-45deg); }
+
+        iframe { flex: 1; width: 100%; border: none; background: transparent; }
     </style>
 </head>
 <body>
     <div class="status-bar">
-        <div style="display:flex; align-items:center; gap:8px;"><div class="live-dot"></div><div id="clock">00:00</div></div>
-        <div>🔋 100%</div>
+        <div id="clock" style="font-weight: 600;">00:00</div>
+        <div style="display:flex; gap: 6px;">
+            <span>WIFI 🛜</span>
+            <span>100% 🔋</span>
+        </div>
     </div>
 
     <div class="desktop-grid">
-        <div class="app-icon" onclick="openApp('nutrition.html', 'AI 营养师')">
-            <div class="icon-box">🥗</div>
+        <div class="app-icon" onclick="openApp('nutrition.html', 'AI 营养管家')">
+            <div class="icon-box" style="background: linear-gradient(135deg, #FF9A9E, #FECFEF);">🥗</div>
             <div class="icon-text">营养管家</div>
         </div>
         <div class="app-icon" onclick="openApp('game.html', 'Color Wars')">
-            <div class="icon-box">🕹️</div>
+            <div class="icon-box" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🕹️</div>
             <div class="icon-text">领地战</div>
         </div>
     </div>
 
     <div class="dock-container">
         <div class="dock">
-            <div class="app-icon" onclick="openApp('nutrition.html', 'AI 营养师')"><div class="icon-box">🥗</div></div>
-            <div class="app-icon" onclick="openApp('game.html', 'Color Wars')"><div class="icon-box">🕹️</div></div>
+            <div class="app-icon" onclick="openApp('nutrition.html', 'AI 营养管家')">
+                <div class="icon-box" style="background: linear-gradient(135deg, #FF9A9E, #FECFEF);">🥗</div>
+            </div>
+            <div class="app-icon" onclick="openApp('game.html', 'Color Wars')">
+                <div class="icon-box" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🕹️</div>
+            </div>
+            <div class="app-icon" onclick="alert('秘密开发中喵~ 🎵')">
+                <div class="icon-box" style="background: linear-gradient(135deg, #84fab0, #8fd3f4);">🎵</div>
+            </div>
         </div>
     </div>
 
     <div class="window-overlay" id="appOverlay">
         <div class="window-frame" id="appFrame">
             <div class="window-header">
+                <div class="traffic-lights">
+                    <div class="light red" onclick="closeApp()"></div>
+                    <div class="light yellow" onclick="closeApp()"></div>
+                    <div class="light green"></div>
+                </div>
                 <div class="window-title" id="appTitle">App</div>
-                <button class="close-btn" onclick="closeApp()">✖</button>
             </div>
             <iframe id="appContent" src=""></iframe>
         </div>
     </div>
 
     <script>
-        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'}); }
+        // 更新时间
+        function updateClock() { 
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'});
+            // 去除可能出现的 "上午/下午" 字样，保持苹果极简风
+            document.getElementById('clock').innerText = timeStr.replace(/上午|下午/g, ''); 
+        }
         setInterval(updateClock, 1000); updateClock();
 
+        // 丝滑打开动画
         function openApp(url, title) {
             const overlay = document.getElementById('appOverlay');
             const frame = document.getElementById('appFrame');
             document.getElementById('appTitle').innerText = title;
             document.getElementById('appContent').src = url; 
+            
             overlay.style.display = 'flex';
-            setTimeout(() => { overlay.style.opacity = '1'; frame.style.transform = 'translateY(0) scale(1)'; }, 20);
+            // 使用微小的延时触发重绘，激活贝塞尔曲线动画
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1'; 
+                    frame.style.transform = 'scale(1) translateY(0)'; 
+                });
+            });
         }
 
+        // 丝滑关闭动画
         function closeApp() {
             const overlay = document.getElementById('appOverlay');
             const frame = document.getElementById('appFrame');
-            overlay.style.opacity = '0'; frame.style.transform = 'translateY(30px) scale(0.95)';
-            setTimeout(() => { overlay.style.display = 'none'; document.getElementById('appContent').src = ''; }, 300);
+            
+            overlay.style.opacity = '0'; 
+            frame.style.transform = 'scale(0.95) translateY(20px)';
+            
+            // 等待动画结束后清空内容并隐藏
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+                document.getElementById('appContent').src = ''; 
+            }, 400);
         }
     </script>
 </body>
