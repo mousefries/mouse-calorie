@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>领地战 Color Wars V2</title>
+    <style>
+        /* 🌌 全局高级暗黑毛玻璃风格 */
+        body {
+            margin: 0; padding: 0; height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            user-select: none; -webkit-user-select: none; color: white;
+            overflow: hidden;
+        }
+
+        /* 赛前大厅 (毛玻璃模态框) */
+        #setup-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 50; transition: opacity 0.4s ease;
+        }
+        .setup-card {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            padding: 30px; border-radius: 24px; width: 85%; max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .setup-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        select, button {
+            background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 12px; border-radius: 10px; font-size: 1rem; outline: none;
+        }
+        .start-btn {
+            width: 100%; margin-top: 20px; padding: 15px; font-size: 1.2rem; font-weight: bold;
+            background: #34c759; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* 游戏主界面 */
+        #status-bar {
+            width: 90%; max-width: 400px; padding: 15px; border-radius: 16px;
+            text-align: center; font-size: 1.2rem; font-weight: bold;
+            margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+        #board {
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 20px;
+            width: 90%; max-width: 400px; aspect-ratio: 1 / 1;
+        }
+        .cell {
+            background: rgba(255,255,255,0.1); border-radius: 10px;
+            position: relative; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+            padding: 5%; gap: 2px; transition: transform 0.1s, background-color 0.3s;
+        }
+        .cell:active { transform: scale(0.85); }
+        
+        /* 皮肤图标动画 */
+        .dot {
+            font-size: 1.5rem; line-height: 1;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* 阵营颜色 */
+        .color-0 { background-color: #f1c40f !important; color: #000; }
+        .color-1 { background-color: #3498db !important; color: #fff; }
+        .color-2 { background-color: #2ecc71 !important; color: #000; }
+        .color-3 { background-color: #e74c3c !important; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- 赛前大厅 -->
+    <div id="setup-screen">
+        <div class="setup-card">
+            <h2 style="text-align: center; margin-top: 0;">🎮 游戏设置</h2>
+            
+            <div class="setup-row">
+                <span>🎨 棋子皮肤：</span>
+                <select id="skin-select">
+                    <option value="0">经典点点 ⚪️</option>
+                    <option value="1">疯狂动物 🐹🐱🐶🐰</option>
+                    <option value="2">快乐大餐 🍟🍕🍔🥤</option>
+                    <option value="3">微观生化 🦠💊💉🧬</option>
+                </select>
+            </div>
+
+            <!-- 玩家配置 -->
+            <div id="players-config"></div>
+
+            <button class="start-btn" onclick="startGame()">开始战斗 ⚔️</button>
+        </div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div id="status-bar" style="display: none;"></div>
+    <div id="board" style="display: none;"></div>
+
+    <script>
+        const ROWS = 6, COLS = 6;
+        let currentPlayer = 0;
+        let grid = [];
+        let isAnimating = false;
+        
+        // 游戏数据
+        let players = []; 
+        const skins = [
+            ['⚪️', '⚪️', '⚪️', '⚪️'],
+            ['🐹', '🐱', '🐶', '🐰'],
+            ['🍟', '🍕', '🍔', '🥤'],
+            ['🦠', '💊', '💉', '🧬']
+        ];
+        let currentSkin = skins[0];
+
+        // 初始化设置大厅
+        function initSetup() {
+            const container = document.getElementById('players-config');
+            const colors = ['🟡 黄', '🔵 蓝', '🟢 绿', '🔴 红'];
+            for(let i=0; i<4; i++) {
+                container.innerHTML += `
+                    <div class="setup-row">
+                        <span style="font-weight:bold; color:var(--c${i})">${colors[i]}方：</span>
+                        <select id="p${i}-type">
+                            <option value="human">👤 人类</option>
+                            <option value="ai-easy">🤖 AI (智障)</option>
+                            <option value="ai-medium">🤖 AI (普通)</option>
+                            <option value="ai-hard">🧠 AI (深思)</option>
+                            ${i > 1 ? '<option value="none">❌ 关闭</option>' : ''}
+                        </select>
+                    </div>
+                `;
+            }
+        }
+
+        function startGame() {
+            // 获取皮肤
+            currentSkin = skins[document.getElementById('skin-select').value];
+            
+            // 获取玩家配置
+            players = [];
+            for(let i=0; i<4; i++) {
+                const val = document.getElementById(`p${i}-type`).value;
+                if(val !== 'none') {
+                    players.push({ id: i, type: val.split('-')[0], diff: val.split('-')[1] || null });
+                }
+            }
+
+            document.getElementById('setup-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('status-bar').style.display = 'block';
+                document.getElementById('board').style.display = 'grid';
+                initBoard();
+            }, 400);
+        }
+
+        function initBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            grid = [];
+            for (let r = 0; r < ROWS; r++) {
+                let row = [];
+                for (let c = 0; c < COLS; c++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    cellEl.onclick = () => handleCellClick(r, c, true);
+                    boardEl.appendChild(cellEl);
+                    row.push({ player: null, dots: 0, element: cellEl, limit: getLimit(r, c) });
+                }
+                grid.push(row);
+            }
+            currentPlayer = 0;
+            updateUI();
+            checkAITurn();
+        }
+
+        function getLimit(r, c) {
+            let limit = 4;
+            if (r === 0 || r === ROWS - 1) limit--;
+            if (c === 0 || c === COLS - 1) limit--;
+            return limit;
+        }
+
+        async function handleCellClick(r, c, isHumanAction) {
+            if (isAnimating) return;
+            const p = players[currentPlayer];
+            
+            // 如果是人类点的，但当前不是人类回合，拒绝
+            if (isHumanAction && p.type !== 'human') return;
+
+            const cell = grid[r][c];
+            if (cell.player !== null && cell.player !== p.id) return; // 只能点空位或自己的
+
+            cell.player = p.id;
+            cell.dots++;
+            renderCell(r, c);
+
+            isAnimating = true;
+            await checkExplosions();
+            
+            // 检查是否有人胜利 (简化的全盘判断)
+            if(!checkWin()) {
+                currentPlayer = (currentPlayer + 1) % players.length;
+                updateUI();
+                isAnimating = false;
+                checkAITurn();
+            }
+        }
+
+        function renderCell(r, c) {
+            const cell = grid[r][c];
+            const el = cell.element;
+            el.innerHTML = ''; 
+            if (cell.dots > 0) {
+                el.className = `cell color-${cell.player}`;
+                for (let i = 0; i < cell.dots; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dot';
+                    dot.innerText = currentSkin[cell.player];
+                    el.appendChild(dot);
+                }
+            } else {
+                el.className = 'cell'; 
+            }
+        }
+
+        async function checkExplosions() {
+            let exploding = true;
+            while (exploding) {
+                exploding = false;
+                let toExplode = [];
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (grid[r][c].dots >= grid[r][c].limit) {
+                            toExplode.push({r, c, player: grid[r][c].player});
+                        }
+                    }
+                }
+
+                if (toExplode.length > 0) {
+                    exploding = true;
+                    await new Promise(resolve => setTimeout(resolve, 250)); // 动画延时
+                    for (let t of toExplode) {
+                        grid[t.r][t.c].dots -= grid[t.r][t.c].limit;
+                        if (grid[t.r][t.c].dots === 0) grid[t.r][t.c].player = null;
+                        renderCell(t.r, t.c);
+
+                        const neighbors = [[t.r-1, t.c], [t.r+1, t.c], [t.r, t.c-1], [t.r, t.c+1]];
+                        for (let n of neighbors) {
+                            const nr = n[0], nc = n[1];
+                            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                                grid[nr][nc].player = t.player;
+                                grid[nr][nc].dots++;
+                                renderCell(nr, nc);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 核心 AI 逻辑引擎 ---
+        async function checkAITurn() {
+            const p = players[currentPlayer];
+            if (p.type !== 'ai') return;
+            
+            isAnimating = true; // 锁定棋盘
+            await new Promise(resolve => setTimeout(resolve, 600)); // 假装在思考
+
+            let validMoves = [];
+            for(let r=0; r<ROWS; r++) {
+                for(let c=0; c<COLS; c++) {
+                    if(grid[r][c].player === null || grid[r][c].player === p.id) validMoves.push({r, c});
+                }
+            }
+
+            if(validMoves.length === 0) return;
+            let move;
+
+            if (p.diff === 'easy') {
+                // 难度 1：完全随机瞎点
+                move = validMoves[Math.floor(Math.random() * validMoves.length)];
+            } 
+            else if (p.diff === 'medium') {
+                // 难度 2：贪心算法，谁快爆炸了就点谁
+                validMoves.sort((a,b) => (grid[a.r][a.c].limit - grid[a.r][a.c].dots) - (grid[b.r][b.c].limit - grid[b.r][b.c].dots));
+                move = validMoves[0];
+            } 
+            else {
+                // 难度 3：深思熟虑 (策略评估)
+                let bestScore = -9999;
+                for (let m of validMoves) {
+                    let score = 0;
+                    let cell = grid[m.r][m.c];
+                    // 如果点这下能直接引发爆炸，加高分！
+                    if (cell.dots + 1 === cell.limit) score += 100;
+                    // 抢占角落和边缘是好策略
+                    if (cell.limit === 2) score += 20; 
+                    if (cell.limit === 3) score += 5;
+                    
+                    // 防守判定：如果周围有敌人的炸弹，千万别往那儿放，要扣分！
+                    const neighbors = [[m.r-1, m.c], [m.r+1, m.c], [m.r, m.c-1], [m.r, m.c+1]];
+                    for (let n of neighbors) {
+                        const nr = n[0], nc = n[1];
+                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                            let nCell = grid[nr][nc];
+                            if (nCell.player !== null && nCell.player !== p.id && nCell.dots + 1 === nCell.limit) {
+                                score -= 50; // 极度危险！
+                            }
+                        }
+                    }
+                    // 加入一点随机性，防止被玩家摸透套路
+                    score += Math.random() * 5; 
+
+                    if (score > bestScore) { bestScore = score; move = m; }
+                }
+            }
+
+            isAnimating = false; // 解锁，让 AI 点击
+            handleCellClick(move.r, move.c, false);
+        }
+
+        function checkWin() {
+            // 简单的胜利判定：如果棋盘上有超过2个子，且全是一个人的颜色，则游戏结束
+            let totalDots = 0;
+            let activePlayers = new Set();
+            for(let r=0; r<ROWS; r++) {
+                for(let c=0; c<COLS; c++) {
+                    if(grid[r][c].player !== null) {
+                        totalDots++;
+                        activePlayers.add(grid[r][c].player);
+                    }
+                }
+            }
+            if(totalDots > 2 && activePlayers.size === 1) {
+                const winnerId = Array.from(activePlayers)[0];
+                document.getElementById('status-bar').innerText = `🏆 游戏结束！${currentSkin[winnerId]} 获胜！`;
+                return true;
+            }
+            return false;
+        }
+
+        function updateUI() {
+            const bar = document.getElementById('status-bar');
+            bar.className = `color-${players[currentPlayer].id}`;
+            let pName = ['🟡', '🔵', '🟢', '🔴'][players[currentPlayer].id];
+            bar.innerText = `👉 轮到 ${pName} 方 (${players[currentPlayer].type === 'human' ? '人类' : 'AI'})`;
+        }
+
+        initSetup();
+    </script>
+</body>
+</html>
+
