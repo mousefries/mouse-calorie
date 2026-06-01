@@ -3,84 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>细胞防卫战：微观前线</title>
+    <title>细胞防卫战：微观前线 V3</title>
     <style>
+        /* 📱 终极响应式布局，完美适配手机和 iPad/电脑 */
         body {
-            background-color: #fdf6e3;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 20px;
-            display: flex; justify-content: center; align-items: flex-start; gap: 20px;
-            user-select: none; flex-wrap: wrap; 
+            margin: 0; padding: 0; height: 100dvh; display: flex; flex-direction: column;
+            background-color: #1a1a2e; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; user-select: none;
         }
-        .canvas-area {
-            background-color: #1a1a2e; border: 4px solid #ffb3d9; border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(255, 179, 217, 0.4); touch-action: none;
-            max-width: 100%; height: auto;
+        /* 游戏区域：手机上占上半屏 */
+        .game-container {
+            flex: 1.2; display: flex; justify-content: center; align-items: center;
+            background: #0f0f1a; position: relative; min-height: 0;
         }
+        canvas {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            box-shadow: 0 0 20px rgba(255, 179, 217, 0.2);
+        }
+        /* 答题区域：手机上占下半屏，可滑动 */
         .quiz-area {
-            width: 320px; background-color: #ffffff; border: 4px solid #3498db;
-            border-radius: 15px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+            flex: 1; background-color: #ffffff; padding: 15px 20px; overflow-y: auto;
+            border-top: 4px solid #3498db; border-radius: 20px 20px 0 0;
         }
-        .status-bar { color: #fff; font-weight: bold; font-size: 16px; }
-        .cute-btn {
-            background-color: #ffb3d9; color: white; border: none; padding: 12px;
-            border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer;
-            width: 100%; margin-top: 15px; transition: 0.2s;
+        /* 💻 电脑/大屏平板横向布局覆盖 */
+        @media (min-width: 768px) {
+            body { flex-direction: row; padding: 20px; gap: 20px; background-color: #fdf6e3; }
+            .game-container { flex: auto; border-radius: 15px; overflow: hidden; border: 4px solid #ffb3d9; }
+            canvas { height: 100%; border-radius: 10px; }
+            .quiz-area { width: 350px; flex: none; border: 4px solid #3498db; border-radius: 15px; height: 100%; box-sizing: border-box; }
         }
+
+        h2 { color: #3498db; margin-top:0; font-size: 1.2rem; display: flex; align-items: center; gap: 5px; }
+        .cute-btn { background-color: #3498db; color: white; border: none; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4); }
         .cute-btn:active { transform: scale(0.95); }
-        .option-label { display: block; margin-bottom: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; cursor: pointer; border-left: 4px solid transparent; }
+        .option-label { display: block; margin-bottom: 8px; padding: 10px; background: #f8f9fa; border-radius: 10px; cursor: pointer; border-left: 4px solid #e9ecef; font-size: 0.95rem; }
         .option-label:hover { background: #e9ecef; border-left-color: #3498db; }
+        #spellAlert { color: #8e44ad; font-weight: bold; font-size: 1.1rem; text-align: center; height: 25px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-    <div style="position: relative;">
-        <canvas id="gameStage" width="500" height="600" class="canvas-area"></canvas>
-        <div id="gameOverScreen" style="display:none; position:absolute; top:40%; left:50%; transform:translate(-50%, -50%); color:white; text-align:center; background:rgba(0,0,0,0.85); padding:20px; border-radius:10px; border:2px solid #ff4d4d; width: 80%;">
-            <h2 style="color:#ff4d4d; margin-top: 0;">细胞膜破裂，防线崩溃</h2>
-            <p id="finalScore">积分: 0</p>
-            <button class="cute-btn" onclick="location.reload()">重新注入健康细胞</button>
-        </div>
+    <div class="game-container">
+        <canvas id="gameStage" width="500" height="700"></canvas>
     </div>
     
     <div class="quiz-area">
-        <h2 style="color: #3498db; margin-top:0;">🔬 细胞学百科图鉴</h2>
-        <p><strong>细胞膜完整度 (HP):</strong> <span id="hpDisplay">❤️❤️❤️</span></p>
-        <p id="questionText" style="color:#2c3e50; min-height: 50px;">答对下方细胞生物学科普题，即可释放【溶酶体清场符卡】，吞噬全屏异常细胞！</p>
+        <h2>🔬 细胞学符卡图鉴</h2>
+        <div id="spellAlert"></div>
+        <p style="margin: 5px 0;"><strong>膜完整度:</strong> <span id="hpDisplay">❤️❤️❤️</span></p>
+        <p id="questionText" style="color:#2c3e50; min-height: 55px; font-size: 0.95rem;">答对下方考点，释放专属细胞器符卡！</p>
         <div id="optionsGroup"></div>
-        <button class="cute-btn" style="background-color: #3498db;" onclick="triggerQuiz()">提取细胞器考点</button>
+        <button class="cute-btn" onclick="triggerQuiz()">提取细胞器考点</button>
     </div>
 
 <script>
-    // ==========================================
-    // 🎨 占位立绘系统 (四张图全安排上了喵！)
-    // ==========================================
-    const assets = { player: new Image(), enemyNormal: new Image(), enemyElite: new Image(), bullet: new Image() };
-    
-    // 直接读取你上传的文件名
-    assets.player.src = 'image_16.png';       // 主角
-    assets.enemyNormal.src = 'image_17.png';  // 普通杂兵
-    assets.enemyElite.src = 'image_18.png';   // 精英怪
-    assets.bullet.src = 'image_19.png';       // 子弹
+    // 🎨 美术资产对接
+    const assets = { player: new Image(), enemyNormal: new Image(), enemyBoss: new Image(), bullet: new Image() };
+    assets.player.src = 'image_16.png';       
+    assets.enemyNormal.src = 'image_17.png';  
+    assets.enemyBoss.src = 'image_18.png';   
+    assets.bullet.src = 'image_19.png';       
 
-    // ==========================================
-    // 🚀 核心引擎
-    // ==========================================
+    // 🚀 核心引擎与视觉特效
     const canvas = document.getElementById('gameStage');
     const ctx = canvas.getContext('2d');
-
-    let hp = 3; let score = 0; let graze = 0; let isGameOver = false; let spellActiveTime = 0;
+    let hp = 3; let score = 0; let graze = 0; let isGameOver = false;
     let lastTime = performance.now(); let fireTimer = 0; let spawnTimer = 0;
+    let bgOffsetY = 0; // 滚动背景
 
-    const player = { x: 250, y: 500, hitRadius: 5, grazeRadius: 28, speed: 300 }; 
-    let bullets = []; let enemies = []; let particles = [];
+    // 东方核心：玩家与 Boss
+    const player = { x: 250, y: 600, hitRadius: 4, grazeRadius: 28, speed: 400 }; 
+    let boss = { active: false, x: 250, y: -100, hp: 100, maxHp: 100, state: 'waiting', fireTimer: 0 };
+    
+    let bullets = []; let enemyBullets = []; let enemies = []; let particles = [];
+    
+    // 符卡系统状态
+    let activeSpell = null; let spellTimer = 0; let timeScale = 1.0;
 
-    // 键盘监听
-    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-    window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-    window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
-
-    // 触控监听
+    // 触控监听 (修复了屏幕缩放后的坐标偏移)
     let touchActive = false; let targetX = player.x; let targetY = player.y;
     canvas.addEventListener('touchmove', e => {
         e.preventDefault(); touchActive = true;
@@ -91,182 +91,226 @@
 
     function update(dt) {
         if (isGameOver) return;
-        if (spellActiveTime > 0) spellActiveTime -= dt;
+        
+        // 符卡衰减与时间减速(子弹时间)特效
+        if (spellTimer > 0) {
+            spellTimer -= dt;
+            if (spellTimer <= 0) { activeSpell = null; timeScale = 1.0; document.getElementById('spellAlert').innerText = ""; }
+        }
 
-        // 1. 移动
+        // 1. 背景星空/细胞液滚动
+        bgOffsetY = (bgOffsetY + 100 * dt) % 100;
+
+        // 2. 玩家移动
         if (touchActive) {
-            player.x += (targetX - player.x) * 12 * dt;
-            player.y += (targetY - player.y) * 12 * dt;
-        } else {
-            let dx = 0, dy = 0;
-            if (keys.w || keys.ArrowUp) dy -= 1;
-            if (keys.s || keys.ArrowDown) dy += 1;
-            if (keys.a || keys.ArrowLeft) dx -= 1;
-            if (keys.d || keys.ArrowRight) dx += 1;
-            if (dx !== 0 || dy !== 0) {
-                let length = Math.sqrt(dx*dx + dy*dy);
-                player.x += (dx/length) * player.speed * dt;
-                player.y += (dy/length) * player.speed * dt;
-            }
+            player.x += (targetX - player.x) * 15 * dt;
+            player.y += (targetY - player.y) * 15 * dt;
         }
         player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
         player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
 
-        // 2. 开火
+        // 3. 玩家开火 (根据符卡改变弹幕形态)
         fireTimer += dt;
-        let fireRate = spellActiveTime > 0 ? 0.08 : 0.2; 
+        let fireRate = activeSpell === 'mitochondria' ? 0.05 : 0.15; 
         if (fireTimer > fireRate) {
-            if (spellActiveTime > 0) {
-                bullets.push({x: player.x, y: player.y, vx: -100, vy: -450});
-                bullets.push({x: player.x, y: player.y, vx: 0, vy: -550});
-                bullets.push({x: player.x, y: player.y, vx: 100, vy: -450});
+            if (activeSpell === 'golgi') {
+                // 高尔基体囊泡轰炸：扇形 5 连发
+                for(let i=-2; i<=2; i++) bullets.push({x: player.x, y: player.y, vx: i*80, vy: -600});
             } else {
-                bullets.push({x: player.x, y: player.y, vx: 0, vy: -500});
+                bullets.push({x: player.x, y: player.y, vx: 0, vy: -600});
             }
             fireTimer = 0;
         }
 
-        // 3. 生成敌人 (区分杂兵和精英)
-        spawnTimer += dt;
-        if (spawnTimer > 1.0) {
-            let isElite = Math.random() > 0.8; // 20%概率出精英怪
-            enemies.push({
-                x: Math.random() * (canvas.width - 60) + 30,
-                y: -40,
-                radius: isElite ? 30 : 20,
-                vy: isElite ? (Math.random() * 30 + 50) : (Math.random() * 50 + 100),
-                hp: isElite ? 3 : 1, // 精英怪要打三下
-                type: isElite ? 'elite' : 'normal'
-            });
-            spawnTimer = 0;
+        // 4. Boss 降临逻辑
+        if (score >= 1000 && !boss.active) {
+            boss.active = true; boss.state = 'entering';
+            enemies = []; // 清空杂兵
         }
 
-        // 4. 更新坐标
+        if (boss.active) {
+            if (boss.state === 'entering') {
+                boss.y += 50 * dt;
+                if (boss.y > 150) boss.state = 'fighting';
+            } else if (boss.state === 'fighting') {
+                // Boss 东方环形弹幕攻击
+                boss.fireTimer += dt * timeScale;
+                if (boss.fireTimer > 1.2) {
+                    for(let i=0; i<12; i++) {
+                        let angle = (i / 12) * Math.PI * 2 + (Math.random()*0.2); // 稍微加点随机旋转
+                        enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle)*200, vy: Math.sin(angle)*200});
+                    }
+                    boss.fireTimer = 0;
+                }
+                // Boss 左右漂浮
+                boss.x = 250 + Math.sin(performance.now()/1000) * 100;
+            }
+        } else {
+            // 杂兵生成 (受时间流速控制)
+            spawnTimer += dt * timeScale;
+            if (spawnTimer > 1.0) {
+                enemies.push({ x: Math.random() * (canvas.width - 60) + 30, y: -40, radius: 20, vy: Math.random() * 50 + 100, hp: 1 });
+                spawnTimer = 0;
+            }
+        }
+
+        // 5. 坐标更新与清理
         bullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; });
         bullets = bullets.filter(b => b.y > -20 && b.x > -20 && b.x < canvas.width + 20);
 
-        enemies.forEach(e => e.y += e.vy * dt);
-        enemies = enemies.filter(e => {
-            if (e.y > canvas.height + 40) { score = Math.max(0, score - 10); return false; }
-            return true;
-        });
+        enemyBullets.forEach(b => { b.x += b.vx * dt * timeScale; b.y += b.vy * dt * timeScale; });
+        enemyBullets = enemyBullets.filter(b => b.y < canvas.height + 20 && b.x > -20 && b.x < canvas.width + 20);
 
+        enemies.forEach(e => e.y += e.vy * dt * timeScale);
+        enemies = enemies.filter(e => e.y < canvas.height + 40);
+        
         particles.forEach(p => { p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.alpha -= dt * 2; });
         particles = particles.filter(p => p.alpha > 0);
 
-        // 5. 碰撞检测
-        for (let i = enemies.length - 1; i >= 0; i--) {
-            let e = enemies[i];
-            
-            for (let j = bullets.length - 1; j >= 0; j--) {
-                let b = bullets[j];
-                let dist = Math.hypot(e.x - b.x, e.y - b.y);
-                if (dist < e.radius + 10) { // 稍微扩大子弹判定让手感更好
-                    e.hp--;
-                    bullets.splice(j, 1);
-                    createExplosion(b.x, b.y, '#3498db', 3); // 击中特效
-                    
-                    if(e.hp <= 0) {
-                        createExplosion(e.x, e.y, e.type === 'elite' ? '#f1c40f' : '#e74c3c', 10);
-                        score += (e.type === 'elite' ? 150 : 50);
-                        enemies.splice(i, 1);
-                    }
-                    break;
+        // 6. 碰撞检测
+        // 玩家子弹打敌人 & Boss
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            let b = bullets[j]; let hit = false;
+            if (boss.active && boss.state === 'fighting' && Math.hypot(boss.x - b.x, boss.y - b.y) < 50) {
+                boss.hp--; bullets.splice(j, 1); hit = true;
+                createExplosion(b.x, b.y, '#f1c40f', 2);
+                if (boss.hp <= 0) { isGameOver = true; winGame(); }
+            }
+            if(hit) continue;
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 15) {
+                    bullets.splice(j, 1); enemies.splice(i, 1); hit = true;
+                    createExplosion(b.x, b.y, '#3498db', 5);
+                    score += 50; break;
                 }
             }
-            if (e.hp <= 0) continue;
+        }
 
-            let distToPlayer = Math.hypot(e.x - player.x, e.y - player.y);
-            if (distToPlayer < e.radius + player.grazeRadius && distToPlayer > e.radius + player.hitRadius) {
-                if(!e.grazed) { graze++; score += 10; e.grazed = true; } 
-            } else if (distToPlayer < e.radius + player.hitRadius) {
-                createExplosion(player.x, player.y, '#e74c3c', 15);
-                enemies.splice(i, 1);
-                hp--;
-                document.getElementById('hpDisplay').innerText = '❤️'.repeat(hp) + '🖤'.repeat(3-hp);
-                if (hp <= 0) {
-                    isGameOver = true;
-                    document.getElementById('gameOverScreen').style.display = 'block';
-                    document.getElementById('finalScore').innerText = `最终 ATP 积分: ${score} | 细胞擦弹: ${graze}`;
-                }
+        // 玩家受伤判定 (擦弹与掉血)
+        function checkPlayerHit(ex, ey, eradius, isBullet) {
+            let distToPlayer = Math.hypot(ex - player.x, ey - player.y);
+            if (activeSpell === 'er') return; // 内质网无敌状态免伤
+            if (distToPlayer < eradius + player.grazeRadius && distToPlayer > eradius + player.hitRadius) {
+                if(!isBullet) { graze++; score += 10; } 
+            } else if (distToPlayer < eradius + player.hitRadius) {
+                hp--; document.getElementById('hpDisplay').innerText = '❤️'.repeat(Math.max(0,hp)) + '🖤'.repeat(3-hp);
+                createExplosion(player.x, player.y, '#e74c3c', 20);
+                if (hp <= 0) { isGameOver = true; loseGame(); }
+                return true; // 触发受伤
             }
+            return false;
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            if (checkPlayerHit(enemies[i].x, enemies[i].y, enemies[i].radius, false)) { enemies.splice(i, 1); }
+        }
+        for (let i = enemyBullets.length - 1; i >= 0; i--) {
+            if (checkPlayerHit(enemyBullets[i].x, enemyBullets[i].y, 6, true)) { enemyBullets.splice(i, 1); }
         }
     }
 
+    // 🎨 渲染逻辑
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 绘制主角
-        if (assets.player.complete && assets.player.naturalWidth !== 0) {
-            ctx.drawImage(assets.player, player.x - 25, player.y - 25, 50, 50);
-        } else {
-            ctx.beginPath(); ctx.arc(player.x, player.y, player.grazeRadius, 0, Math.PI*2);
-            ctx.strokeStyle = 'rgba(52, 152, 219, 0.3)'; ctx.lineWidth = 2; ctx.stroke();
-            ctx.beginPath(); ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI*2);
-            ctx.fillStyle = '#3498db'; ctx.fill();
+        // 画滚动背景
+        ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        for(let i=0; i<50; i++) {
+            let y = (i * 30 + bgOffsetY * (i%3+1)) % canvas.height;
+            let x = (i * 73) % canvas.width;
+            ctx.beginPath(); ctx.arc(x, y, (i%3)+1, 0, Math.PI*2); ctx.fill();
         }
 
-        // 绘制子弹
-        bullets.forEach(b => {
-            if (assets.bullet.complete && assets.bullet.naturalWidth !== 0) {
-                ctx.drawImage(assets.bullet, b.x - 10, b.y - 10, 20, 20);
-            } else {
-                ctx.fillStyle = spellActiveTime > 0 ? '#f1c40f' : '#2ecc71';
-                ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill();
+        // 画玩家
+        if (assets.player.complete && assets.player.naturalWidth !== 0) {
+            ctx.drawImage(assets.player, player.x - 25, player.y - 25, 50, 50);
+            if(activeSpell === 'er') { // 无敌护盾
+                ctx.beginPath(); ctx.arc(player.x, player.y, 35, 0, Math.PI*2);
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 3; ctx.stroke();
             }
-        });
+        }
+        // 判定点
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
 
-        // 绘制敌人
+        // 🚨 华丽的 Boss 降临警报
+        if (boss.active && boss.state === 'entering') {
+            ctx.fillStyle = `rgba(231, 76, 60, ${0.2 + Math.sin(performance.now()/100)*0.2})`; 
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('🚨 WARNING 🚨', canvas.width/2, canvas.height/2);
+            ctx.fillStyle = '#fff'; ctx.font = '20px Arial';
+            ctx.fillText('变异巨噬细胞 降临中', canvas.width/2, canvas.height/2 + 40);
+        }
+
+        // 画 Boss
+        if (boss.active) {
+            if (assets.enemyBoss.complete && assets.enemyBoss.naturalWidth !== 0) {
+                ctx.drawImage(assets.enemyBoss, boss.x - 60, boss.y - 60, 120, 120);
+            }
+            // Boss 血条
+            ctx.fillStyle = 'red'; ctx.fillRect(boss.x - 50, boss.y - 70, 100 * (boss.hp/boss.maxHp), 8);
+            ctx.strokeStyle = '#fff'; ctx.strokeRect(boss.x - 50, boss.y - 70, 100, 8);
+        }
+
+        // 画杂兵和子弹
         enemies.forEach(e => {
-            let img = e.type === 'elite' ? assets.enemyElite : assets.enemyNormal;
-            if (img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, e.x - e.radius, e.y - e.radius, e.radius*2, e.radius*2);
-            } else {
-                ctx.fillStyle = e.type === 'elite' ? '#8e44ad' : '#e74c3c';
-                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); ctx.fill();
-            }
+            if (assets.enemyNormal.complete && assets.enemyNormal.naturalWidth !== 0) ctx.drawImage(assets.enemyNormal, e.x - 25, e.y - 25, 50, 50);
         });
+        bullets.forEach(b => {
+            if (assets.bullet.complete && assets.bullet.naturalWidth !== 0) ctx.drawImage(assets.bullet, b.x - 10, b.y - 10, 20, 20);
+        });
+        ctx.fillStyle = '#e74c3c';
+        enemyBullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill(); });
 
-        // 绘制粒子
+        // 画粒子
         particles.forEach(p => {
             ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
             ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-        });
+        }); ctx.globalAlpha = 1.0;
 
-        // 绘制状态
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.font = '14px Arial';
+        // UI
+        ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.font = 'bold 16px Arial';
         ctx.fillText(`ATP: ${score}`, 10, 25);
         ctx.fillText(`擦弹: ${graze}`, 10, 45);
-        if(spellActiveTime > 0) {
-            ctx.fillStyle = '#f1c40f'; ctx.font = 'bold 16px Arial';
-            ctx.fillText(`⚡ 溶酶体狂暴: ${Math.ceil(spellActiveTime)}s`, 10, 70);
-        }
+        if(!boss.active) ctx.fillText(`进度: ${Math.min(100, score/10)}% (1000分见Boss)`, 10, 65);
     }
 
     function createExplosion(x, y, color, count) {
-        for(let k=0; k<count; k++) {
-            particles.push({ x: x, y: y, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8, size: Math.random()*3+2, alpha: 1, color: color });
-        }
+        for(let k=0; k<count; k++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8, size: Math.random()*3+2, alpha: 1, color: color });
     }
 
     function gameLoop(timestamp) {
-        let dt = (timestamp - lastTime) / 1000; 
-        if (dt > 0.1) dt = 0.1; 
-        lastTime = timestamp;
-        update(dt); draw();
+        let dt = (timestamp - lastTime) / 1000; if (dt > 0.1) dt = 0.1; 
+        lastTime = timestamp; update(dt); draw();
         if (!isGameOver) requestAnimationFrame(gameLoop);
     }
     requestAnimationFrame(gameLoop);
 
+    function loseGame() {
+        document.getElementById('questionText').innerHTML = `<span style="color:#e74c3c; font-size:1.2rem; font-weight:bold;">防线崩溃！<br>最终积分: ${score}</span><br><br><button class="cute-btn" onclick="location.reload()">重新开始</button>`;
+        document.getElementById('optionsGroup').innerHTML = '';
+    }
+    function winGame() {
+        document.getElementById('questionText').innerHTML = `<span style="color:#f1c40f; font-size:1.2rem; font-weight:bold;">🎉 变异清除成功！<br>你拯救了微观世界！</span><br><br><button class="cute-btn" onclick="location.reload()">再玩一次</button>`;
+        document.getElementById('optionsGroup').innerHTML = '';
+    }
+
     // ==========================================
-    // 🔬 细胞生物学科普题库 (告别硬核生化！)
+    // 🧬 5 大细胞器绝美符卡系统
     // ==========================================
+    const spellCards = [
+        { id: 'golgi', name: '高尔基体·囊泡轰炸', desc: '武器改造成扇形散弹，持续 6 秒！', duration: 6, action: () => {} },
+        { id: 'lysosome', name: '溶酶体·水解清屏', desc: '瞬间溶解当前屏幕所有杂兵和敌方子弹！', duration: 2, action: () => { enemies.forEach(e => createExplosion(e.x, e.y, '#3498db', 10)); enemies = []; enemyBullets = []; } },
+        { id: 'ribosome', name: '核糖体·多肽链缠绕', desc: '进入细胞子弹时间，敌方减速 70%，持续 5 秒！', duration: 5, action: () => { timeScale = 0.3; } },
+        { id: 'mitochondria', name: '线粒体·氧化磷酸化', desc: 'ATP暴走！射速极速提升，持续 5 秒！', duration: 5, action: () => {} },
+        { id: 'er', name: '内质网·钙流护盾', desc: '生成绝对防御光环，免疫一切碰撞和子弹，持续 5 秒！', duration: 5, action: () => {} }
+    ];
+
     const quizBank = [
-        { q: "被誉为细胞内的“物流中心”，负责对蛋白质进行修饰、分拣和包装的细胞器是？", options: {"A": "内质网", "B": "高尔基体", "C": "溶酶体"}, ans: "B" },
-        { q: "动物细胞中，被称为“消化车间”，含有多种水解酶，能分解衰老细胞器的结构是？", options: {"A": "溶酶体", "B": "线粒体", "C": "核糖体"}, ans: "A" },
-        { q: "参与构成动物细胞的细胞骨架，且在细胞分裂时负责牵引染色体移动的管状结构是？", options: {"A": "微丝", "B": "中间纤维", "C": "微管"}, ans: "C" },
-        { q: "人体细胞在缺氧或剧烈运动时，为了快速获取能量，会在细胞质基质中进行无氧呼吸，其产物主要是？", options: {"A": "乙醇 (酒精)", "B": "乳酸", "C": "二氧化碳和水"}, ans: "B" }
+        { q: "被誉为细胞内『物流中心』，负责蛋白质修饰、分拣的细胞器是？", ans: "高尔基体", options: ["内质网", "高尔基体", "溶酶体"] },
+        { q: "含有多种水解酶，被称为细胞『消化车间』的结构是？", ans: "溶酶体", options: ["溶酶体", "线粒体", "中心体"] },
+        { q: "细胞的有氧呼吸主要发生在哪一个被誉为『动力工厂』的细胞器中？", ans: "线粒体", options: ["高尔基体", "叶绿体", "线粒体"] },
+        { q: "附着在内质网上，负责把氨基酸合成蛋白质肽链的『生产机器』是？", ans: "核糖体", options: ["核糖体", "溶酶体", "微管"] }
     ];
 
     function triggerQuiz() {
@@ -274,25 +318,20 @@
         let data = quizBank[Math.floor(Math.random() * quizBank.length)];
         document.getElementById('questionText').innerHTML = `<strong>${data.q}</strong>`;
         let optDiv = document.getElementById('optionsGroup'); optDiv.innerHTML = '';
-        
-        for(let key in data.options) {
-            optDiv.innerHTML += `
-                <label class="option-label" onclick="checkAnswer('${key}', '${data.ans}')">
-                    <input type="radio" name="ans"> <strong>${key}:</strong> ${data.options[key]}
-                </label>`;
-        }
+        data.options.sort(() => Math.random() - 0.5).forEach(opt => {
+            optDiv.innerHTML += `<label class="option-label" onclick="checkAnswer('${opt}', '${data.ans}')"><input type="radio" name="ans"> <strong>${opt}</strong></label>`;
+        });
     }
 
     function checkAnswer(selected, correct) {
-        let textEl = document.getElementById('questionText');
         if(selected === correct) {
-            textEl.innerHTML = "✨ <span style='color:#3498db; font-weight:bold;'>结构识别正确！触发符卡：「溶酶体的狂暴吞噬」！</span>";
-            score += 1000;
-            spellActiveTime = 6; 
-            enemies.forEach(e => createExplosion(e.x, e.y, '#3498db', 15));
-            enemies = []; // 全屏清怪
+            let spell = spellCards[Math.floor(Math.random() * spellCards.length)];
+            activeSpell = spell.id; spellTimer = spell.duration; spell.action();
+            document.getElementById('spellAlert').innerHTML = `✨ 符卡触发：${spell.name} ✨`;
+            document.getElementById('questionText').innerHTML = `<span style="color:#2ecc71;">正确！<br>${spell.desc}</span>`;
+            score += 200;
         } else {
-            textEl.innerHTML = `🚨 <span style='color:#e74c3c; font-weight:bold;'>识别错误！正确选项是 ${correct} 哦！</span>`;
+            document.getElementById('questionText').innerHTML = `<span style="color:#e74c3c; font-weight:bold;">🚨 回答错误！<br>正确答案是【${correct}】</span>`;
         }
         document.getElementById('optionsGroup').innerHTML = ''; 
     }
