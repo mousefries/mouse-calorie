@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>人体卫士：微观防卫战</title>
+    <style>
+        /* 温馨萌系UI配色 */
+        body {
+            background-color: #fdf6e3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            user-select: none;
+        }
+        /* 显微镜战场 */
+        .canvas-area {
+            background-color: #1a1a2e;
+            border: 6px solid #ffb3d9;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(255, 179, 217, 0.4);
+            touch-action: none; /* 屏蔽原生滑动，专心开火 */
+        }
+        /* 答题控制台 */
+        .quiz-area {
+            width: 320px;
+            background-color: #ffffff;
+            border: 4px solid #16a085;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+        }
+        h2 { color: #16a085; margin-top: 0; font-size: 1.4rem; display: flex; align-items: center; gap: 8px;}
+        .cute-btn {
+            background-color: #ffb3d9;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(255, 179, 217, 0.5);
+        }
+        .cute-btn:active { transform: scale(0.95); box-shadow: 0 2px 5px rgba(255, 179, 217, 0.5); }
+        .option-label {
+            display: block;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .option-label:hover { background: #e9ecef; }
+        #questionText { color: #34495e; font-weight: 500; line-height: 1.5; min-height: 60px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameStage" width="600" height="600" class="canvas-area"></canvas>
+    
+    <div class="quiz-area">
+        <h2>🔬 免疫强化中枢</h2>
+        <p id="questionText">卫士，检测到大量异常细胞增殖！<br><br>点击下方按钮，提取科普知识进行火力充能！</p>
+        <div id="optionsGroup"></div>
+        <button class="cute-btn" onclick="triggerCharge()">🧠 抽取免疫图谱</button>
+    </div>
+
+<script>
+    // ==========================================
+    // 超级优化版游戏引擎 (零依赖纯享版)
+    // ==========================================
+    const canvas = document.getElementById('gameStage');
+    const ctx = canvas.getContext('2d');
+
+    // 游戏核心数据
+    let ship = { x: 300, y: 500, radius: 15 };
+    let bullets = [];
+    let enemies = [];
+    let particles = []; // 爆炸特效粒子库
+    let score = 0;
+    let frameCount = 0;
+
+    // --- 绘图与更新逻辑 ---
+
+    // 画纳米飞船
+    function drawShip() {
+        ctx.beginPath();
+        ctx.arc(ship.x, ship.y, ship.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#00ffcc';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00ffcc';
+        ctx.fill();
+        ctx.shadowBlur = 0; // 重置阴影防止污染其他图形
+    }
+
+    // 更新与画子弹
+    function updateBullets() {
+        ctx.fillStyle = '#33ccff';
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            bullets[i].y -= 8; // 子弹速度
+            ctx.beginPath();
+            ctx.arc(bullets[i].x, bullets[i].y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // 飞出屏幕则销毁
+            if (bullets[i].y < 0) bullets.splice(i, 1);
+        }
+    }
+
+    // 更新与画敌人(病变细胞)
+    function updateEnemies() {
+        ctx.fillStyle = '#ff4d4d';
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            enemies[i].y += 2.5; // 掉落速度
+            ctx.beginPath();
+            ctx.arc(enemies[i].x, enemies[i].y, enemies[i].radius, 0, Math.PI * 2);
+            ctx.fill();
+            // 漏掉的敌人扣分并销毁
+            if (enemies[i].y > canvas.height) {
+                score = Math.max(0, score - 50); // 最低0分
+                enemies.splice(i, 1);
+            }
+        }
+    }
+
+    // 更新与画爆炸粒子 (超级加分特效！)
+    function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= 0.05; // 逐渐透明
+            
+            if (p.alpha <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = '#ffb3d9';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+    }
+
+    // --- 核心修复：精准碰撞检测 ---
+    function checkCollisions() {
+        // 必须用逆向循环，防止数组元素删除时索引跳位
+        for (let eIdx = enemies.length - 1; eIdx >= 0; eIdx--) {
+            for (let bIdx = bullets.length - 1; bIdx >= 0; bIdx--) {
+                let dx = enemies[eIdx].x - bullets[bIdx].x;
+                let dy = enemies[eIdx].y - bullets[bIdx].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                // 命中判定：距离小于两者半径之和，稍微放大一点判定范围让手感更好
+                if (distance < (enemies[eIdx].radius + 6)) {
+                    // 1. 生成爆炸粒子
+                    for(let k=0; k<8; k++) {
+                        particles.push({
+                            x: enemies[eIdx].x, 
+                            y: enemies[eIdx].y,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: (Math.random() - 0.5) * 6,
+                            size: Math.random() * 4 + 2,
+                            alpha: 1
+                        });
+                    }
+                    // 2. 销毁敌人和子弹
+                    enemies.splice(eIdx, 1);
+                    bullets.splice(bIdx, 1);
+                    // 3. 加分
+                    score += 100;
+                    break; // 这个子弹用过了，跳出子弹循环
+                }
+            }
+        }
+    }
+
+    // --- 游戏主循环 ---
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frameCount++;
+
+        // 自动开火 (每12帧发一发)
+        if (frameCount % 12 === 0) bullets.push({x: ship.x, y: ship.y - 20});
+        
+        // 生成敌人 (每50帧生成一个)
+        if (frameCount % 50 === 0) {
+            let radius = Math.random() * 8 + 12; // 大小不一的细胞
+            let randomX = Math.random() * (canvas.width - radius * 2) + radius;
+            enemies.push({x: randomX, y: -30, radius: radius});
+        }
+
+        updateBullets();
+        updateEnemies();
+        checkCollisions();
+        updateParticles(); // 渲染特效
+        drawShip();
+
+        // 绘制分数面板
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px "Segoe UI"';
+        ctx.fillText('ATP 积分: ' + score, 20, 35);
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- 丝滑触控绑定 ---
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        let rect = canvas.getBoundingClientRect();
+        // 映射坐标，防止缩放导致的偏移
+        let scaleX = canvas.width / rect.width;
+        let scaleY = canvas.height / rect.height;
+        ship.x = (e.touches[0].clientX - rect.left) * scaleX;
+        ship.y = (e.touches[0].clientY - rect.top) * scaleY;
+    }, {passive: false});
+
+    canvas.addEventListener('mousemove', function(e) {
+        let rect = canvas.getBoundingClientRect();
+        let scaleX = canvas.width / rect.width;
+        let scaleY = canvas.height / rect.height;
+        ship.x = (e.clientX - rect.left) * scaleX;
+        ship.y = (e.clientY - rect.top) * scaleY;
+    });
+
+    // 引擎点火！
+    gameLoop();
+
+
+    // ==========================================
+    // 科普题库逻辑 (直接写死，稳定且极速)
+    // ==========================================
+    const quizBank = [
+        {
+            q: "【临床药理】紫杉醇作为经典抗肿瘤药物，其主要作用机制是稳定细胞内的哪种结构，从而阻止细胞分裂？",
+            options: {"A": "微丝网络", "B": "微管系统", "C": "中间纤维", "D": "细胞膜骨架"},
+            ans: "B"
+        },
+        {
+            q: "【细胞生物学】动物细胞在进行有丝分裂时，形成“分裂沟”从而将细胞一分为二的主要动力来源于？",
+            options: {"A": "微管滑动", "B": "微丝-肌球蛋白收缩环", "C": "纺锤体牵拉", "D": "溶酶体自噬"},
+            ans: "B"
+        },
+        {
+            q: "【病理学科普】如果细胞内的“垃圾处理厂”发生基因突变，会导致有害物质堆积，这个“处理厂”指的是？",
+            options: {"A": "高尔基体", "B": "线粒体", "C": "内质网", "D": "溶酶体"},
+            ans: "D"
+        }
+    ];
+
+    function triggerCharge() {
+        // 随机抽题
+        let data = quizBank[Math.floor(Math.random() * quizBank.length)];
+        
+        document.getElementById('questionText').innerHTML = `<span style="color:#2c3e50;">${data.q}</span>`;
+        let optDiv = document.getElementById('optionsGroup');
+        optDiv.innerHTML = '';
+        
+        // 渲染选项
+        for(let key in data.options) {
+            optDiv.innerHTML += `
+                <label class="option-label" onclick="checkAnswer('${key}', '${data.ans}')">
+                    <input type="radio" name="answer"> 
+                    <strong>${key}:</strong> ${data.options[key]}
+                </label>`;
+        }
+    }
+
+    function checkAnswer(selected, correct) {
+        let textEl = document.getElementById('questionText');
+        let optDiv = document.getElementById('optionsGroup');
+        if(selected === correct) {
+            textEl.innerHTML = "✨ <span style='color:#16a085; font-weight:bold;'>分析正确！靶向药效力大幅提升！获得 500 积分奖励！</span>";
+            score += 500;
+        } else {
+            textEl.innerHTML = `🚨 <span style='color:#e74c3c; font-weight:bold;'>免疫识别失败！正确结构应为 ${correct}。请继续学习！</span>`;
+        }
+        optDiv.innerHTML = ''; // 答完清空选项
+    }
+</script>
+</body>
+</html>
