@@ -3,163 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>细胞防卫战：微观前线 (大视野治愈版)</title>
+    <title>细胞防卫战：微观前线 (强制时停版)</title>
     <style>
-        /* 🌸 治愈系明亮微观主题 */
-        :root { 
-            --primary: #ff85a2; 
-            --secondary: #4ecdc4; 
-            --text-main: #4a4a4a; 
-            --bg-light: #fdf6e3; 
-        }
+        :root { --primary: #ff85a2; --secondary: #4ecdc4; --text-main: #4a4a4a; --bg-light: #fdf6e3; }
         * { box-sizing: border-box; }
         body {
             margin: 0; padding: 0; height: 100dvh; display: flex; flex-direction: column;
             background-color: var(--bg-light); color: var(--text-main);
             font-family: 'Segoe UI', 'Nunito', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden; user-select: none;
-            background-image: radial-gradient(rgba(255, 133, 162, 0.15) 2px, transparent 2px);
-            background-size: 30px 30px;
+            background-image: radial-gradient(rgba(255, 133, 162, 0.15) 2px, transparent 2px); background-size: 30px 30px;
         }
 
         .main-layout { display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; }
-        .game-container {
-            flex: 1.5; display: flex; justify-content: center; align-items: center; position: relative;
-            background: #fff0f5; 
-        }
+        .game-container { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #fff0f5; }
         canvas {
             max-width: 100%; max-height: 100%; object-fit: contain;
             box-shadow: 0 10px 30px rgba(255, 133, 162, 0.2); 
-            border-bottom: 4px solid var(--primary);
-            /* 🌟 保护像素画的终极魔法，绝对不糊！ */
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; image-rendering: pixelated;
         }
         
-        .quiz-area {
-            flex: 1; padding: 20px; background: rgba(255, 255, 255, 0.95);
-            border-top: 2px solid rgba(255, 133, 162, 0.3); overflow-y: auto; z-index: 10;
-            border-radius: 20px 20px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+        /* 状态栏挪到了最上面 */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95); padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 4px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); z-index: 10;
         }
         
         @media (min-width: 800px) {
-            .main-layout { flex-direction: row; padding: 20px; gap: 20px; align-items: center; justify-content: center; }
-            .game-container { flex: none; height: 95vh; aspect-ratio: 3/4; border-radius: 20px; border: 4px solid var(--primary); overflow: hidden; background: #fff0f5; }
-            canvas { border-radius: 15px; border-bottom: none; }
-            .quiz-area { width: 420px; flex: none; height: 95vh; border-radius: 20px; border: 4px solid var(--secondary); }
+            .main-layout { padding: 20px; align-items: center; justify-content: center; }
+            .status-bar { border-radius: 20px 20px 0 0; width: 600px; border-bottom: none; border: 4px solid var(--primary); border-bottom: none; }
+            .game-container { flex: none; height: 85vh; width: 600px; border-radius: 0 0 20px 20px; border: 4px solid var(--primary); border-top: none; overflow: hidden; }
         }
 
-        .sys-header { color: var(--primary); font-size: 1.3rem; margin-top: 0; border-bottom: 2px dashed rgba(255,133,162,0.3); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; }
-        
-        .atp-container { margin: 15px 0; background: #ffe3e8; border-radius: 15px; height: 24px; position: relative; overflow: hidden; border: 2px solid var(--primary); }
+        .hp-hearts { font-size: 1.5rem; letter-spacing: 3px; color: #ff4d6d; }
+        .atp-container { flex: 1; margin: 0 20px; background: #ffe3e8; border-radius: 15px; height: 24px; position: relative; overflow: hidden; border: 2px solid var(--primary); }
         .atp-bar { height: 100%; background: linear-gradient(90deg, #ff85a2, #ff9eb5); width: 100%; transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .atp-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 0px 1px 2px rgba(0,0,0,0.2); }
-        .atp-warning { animation: flashRed 0.6s infinite; }
-        @keyframes flashRed { 0% { background: #ff4d6d; } 50% { background: #ffe3e8; } 100% { background: #ff4d6d; } }
 
-        .hp-hearts { font-size: 1.3rem; letter-spacing: 3px; color: #ff4d6d; }
-        #questionText { color: var(--text-main); min-height: 50px; font-size: 1.05rem; line-height: 1.5; margin-bottom: 15px; font-weight: 600; }
-        
-        .option-label {
-            display: block; margin-bottom: 12px; padding: 12px 15px; background: #f8f9fa; border: 2px solid #e9ecef;
-            border-radius: 12px; cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: 600;
-        }
-        .option-label:hover { background: #f0fdfa; border-color: var(--secondary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(78, 205, 196, 0.15); }
-        
         .btn-action {
             background: var(--primary); color: white; border: none; box-shadow: 0 6px 15px rgba(255, 133, 162, 0.4);
             padding: 15px; font-size: 1.1rem; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s;
             border-radius: 25px; margin-bottom: 10px; letter-spacing: 1px;
         }
-        .btn-action:hover { background: #ff7495; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(255, 133, 162, 0.5); }
+        .btn-action:hover { background: #ff7495; transform: translateY(-3px); }
         .btn-action:active { transform: translateY(1px); }
 
+        /* 全屏通用 Overlay */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(253, 246, 227, 0.95); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow-y: auto;
         }
-        .story-text { max-width: 600px; color: var(--text-main); line-height: 1.8; font-size: 1.1rem; margin-bottom: 30px; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 2px dashed var(--primary); }
-        .story-text span { color: var(--primary); font-weight: bold; }
         
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; max-width: 900px; width: 100%; margin-bottom: 30px; }
-        .gallery-card { background: #fff; border: 2px solid #ffe3e8; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); transition: 0.3s; }
-        .gallery-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(255,133,162,0.2); }
-        .gallery-card img { width: 72px; height: 72px; image-rendering: pixelated; background: #fdf6e3; border-radius: 12px; padding: 5px; }
-        .gallery-info h4 { margin: 0 0 5px 0; color: var(--primary); font-size: 1.1rem; }
-        .gallery-info p { margin: 0; font-size: 0.85rem; color: #666; line-height: 1.5; }
+        /* 🚨 强制答题全屏弹窗 */
+        .quiz-modal {
+            background: white; border: 4px solid var(--secondary); border-radius: 20px; padding: 30px;
+            width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); text-align: center;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        #questionText { color: var(--text-main); font-size: 1.2rem; line-height: 1.5; margin: 20px 0; font-weight: 800; }
+        .option-label {
+            display: block; margin-bottom: 12px; padding: 15px; background: #f8f9fa; border: 2px solid #e9ecef;
+            border-radius: 12px; cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: 700; font-size: 1.1rem;
+        }
+        .option-label:hover { background: #f0fdfa; border-color: var(--secondary); transform: translateY(-2px); }
+
+        .story-text { max-width: 600px; color: var(--text-main); line-height: 1.8; font-size: 1.1rem; margin-bottom: 30px; background: #fff; padding: 25px; border-radius: 20px; border: 2px dashed var(--primary); }
     </style>
 </head>
 <body>
 
+    <!-- 开始界面 -->
     <div id="startScreen" class="overlay">
-        <h1 style="color: var(--primary); text-shadow: 0 4px 10px rgba(255,133,162,0.3); letter-spacing: 2px; font-size: 2.5rem; text-align: center; margin-bottom: 10px;">细胞防卫战<br><span style="font-size: 1.2rem; color: var(--secondary);">微观培养皿大冒险</span></h1>
-        
+        <h1 style="color: var(--primary); font-size: 2.5rem; text-align: center; margin-bottom: 10px;">细胞防卫战</h1>
         <div class="story-text">
-            <p><strong>📝 实习医师任务简报：</strong><br>
-            显微镜下发现异常捣蛋鬼！变异的细胞正在培养皿里搞破坏。如果不阻止它们，可爱的微观世界就要一团糟啦！</p>
-            <p><strong>🕹️ 新手操作指南：</strong><br>
-            你是一只勇敢的 <span>特异性 T 淋巴细胞 (CTL)</span> 卫士。<br>
-            ✨ 使用 <span>屏幕滑动</span> 或键盘 <span>WASD</span> 躲避捣蛋鬼。<br>
-            ✨ <strong>注意：</strong> 发射抗体子弹会消耗 <span>ATP能量</span>！能量空了就只能挨打啦。<br>
-            ✨ <strong>绝招：</strong> 去右边的终端答对 <span>细胞学问题</span>，不仅能瞬间回满 ATP，还能触发超级华丽的细胞器大招！</p>
+            <p><strong>🕹️ 核心机制更新：</strong><br>
+            ✨ 发射抗体会消耗 <span>ATP能量</span>！<br>
+            🚨 <strong>注意：一旦能量耗尽，游戏将强制触发【时间静止】，必须答对科普问题才能解除危机并回满能量！</strong></p>
         </div>
-        
-        <div style="display: flex; gap: 20px; width: 100%; max-width: 400px; flex-direction: column;">
-            <button class="btn-action" onclick="startGame()">🌸 注入培养基 (开始游戏)</button>
-            <button class="btn-action" onclick="openGallery()" style="background: #fff; color: var(--primary); border: 2px solid var(--primary); box-shadow: none;">📖 翻开细胞学图鉴</button>
+        <div style="width: 100%; max-width: 300px;">
+            <button class="btn-action" onclick="startGame()">🌸 准备就绪，开始！</button>
         </div>
     </div>
 
-    <div id="galleryScreen" class="overlay" style="display: none; justify-content: flex-start; padding-top: 50px;">
-        <h2 style="color: var(--primary); border-bottom: 3px dashed var(--primary); padding-bottom: 10px; margin-bottom: 30px;">🔬 细胞生物学图鉴系统</h2>
-        
-        <div class="gallery-grid">
-            <div class="gallery-card">
-                <img src="image_16.png" alt="Player">
-                <div class="gallery-info"><h4>效应 T 细胞 (主角卫士)</h4><p>执行细胞免疫的超级英雄。能精准识别坏细胞，发射穿孔素让敌人“嘭”地一下裂开！</p></div>
-            </div>
-            <div class="gallery-card">
-                <img src="image_17.png" alt="Enemy">
-                <div class="gallery-info"><h4>游离病原体 (捣蛋杂兵)</h4><p>在组织液里乱窜的小坏蛋。虽然个子不大，但是成群结队也会对细胞膜造成威胁哦。</p></div>
-            </div>
-            <div class="gallery-card">
-                <img src="image_18.png" alt="Boss">
-                <div class="gallery-info"><h4>恶性克隆体 (大魔王)</h4><p>不受控制疯狂增殖的坏家伙，还能发射密集的细胞因子风暴，需要主治医师重点关照！</p></div>
-            </div>
-            <div class="gallery-card">
-                <img src="image_19.png" alt="Bullet">
-                <div class="gallery-info"><h4>特异性抗体 (弹药)</h4><p>像小叉子一样精准制导的生化武器，能死死卡住病原体的抗原，剥夺它们的行动能力。</p></div>
-            </div>
+    <!-- 🚨 强制时停答题界面 -->
+    <div id="quizScreen" class="overlay" style="display: none; background: rgba(0,0,0,0.6);">
+        <div class="quiz-modal">
+            <h2 style="color: #ff4d6d; margin-top: 0; font-size: 1.8rem;">🚨 警告：ATP 已耗尽！</h2>
+            <p style="color: #666; font-weight: bold;">时空已冻结，回答导师问题重新激活免疫系统！</p>
+            <div id="questionText">获取题目中...</div>
+            <div id="optionsGroup"></div>
         </div>
-        <button class="btn-action" style="max-width: 300px; background: var(--secondary);" onclick="closeGallery()">返回显微镜</button>
     </div>
 
     <div class="main-layout" id="gameUI" style="opacity: 0;">
-        <div class="game-container">
-            <canvas id="gameStage" width="600" height="800"></canvas>
-        </div>
-        
-        <div class="quiz-area">
-            <h2 class="sys-header"><span>🔬 答题充能站</span> <span id="scoreDisplay" style="font-size:1.1rem; color:var(--secondary);">ATP积分: 0</span></h2>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold;">
-                <span style="color: #888;">细胞膜健康度</span>
-                <span class="hp-hearts" id="hpDisplay">❤️❤️❤️</span>
-            </div>
-
+        <div class="status-bar">
+            <div class="hp-hearts" id="hpDisplay">❤️❤️❤️</div>
             <div class="atp-container" id="atpBox">
                 <div class="atp-bar" id="atpBar"></div>
-                <div class="atp-text" id="atpText">能量储备 (ATP): 100%</div>
+                <div class="atp-text" id="atpText">ATP: 100%</div>
             </div>
-            
-            <div id="spellAlert" style="color: var(--secondary); font-weight: 900; font-size: 1.1rem; text-align: center; height: 25px; margin-bottom: 10px;"></div>
-            
-            <p id="questionText">培养基准备就绪，随时可以提取考点！</p>
-            <div id="optionsGroup"></div>
-            <button class="btn-action" id="quizBtn" onclick="triggerQuiz()">💡 抽取细胞学考点补充满血</button>
+            <div id="scoreDisplay" style="font-weight: 900; color: var(--secondary); font-size: 1.2rem;">0 分</div>
+        </div>
+        <div class="game-container">
+            <canvas id="gameStage" width="600" height="800"></canvas>
+            <div id="spellAlert" style="position: absolute; top: 30%; width: 100%; text-align: center; color: var(--secondary); font-weight: 900; font-size: 2rem; text-shadow: 0 0 10px #fff; pointer-events: none; opacity: 0; transition: opacity 0.5s;"></div>
         </div>
     </div>
 
@@ -170,30 +121,20 @@
     assets.enemyBoss.src = 'image_18.png';   
     assets.bullet.src = 'image_19.png';       
 
-    function startGame() { 
-        document.getElementById('startScreen').style.display = 'none'; 
-        document.getElementById('gameUI').style.opacity = '1';
-        gameState = 'PLAYING'; lastTime = performance.now();
-        requestAnimationFrame(gameLoop); triggerQuiz(); 
-    }
-    function openGallery() { document.getElementById('galleryScreen').style.display = 'flex'; }
-    function closeGallery() { document.getElementById('galleryScreen').style.display = 'none'; }
-
     const canvas = document.getElementById('gameStage');
     const ctx = canvas.getContext('2d');
     
-    let gameState = 'MENU'; 
+    let gameState = 'MENU'; // MENU, PLAYING, QUIZ_PAUSE, GAMEOVER
     let hp = 3; let score = 0; 
     let playerAtp = 100; const MAX_ATP = 100; 
     
     let lastTime = performance.now(); let fireTimer = 0; let spawnTimer = 0; let globalTime = 0;
     
-    // 判定点依然极小 (hitRadius:4)，但是擦弹圈跟着图像放大了！
     const player = { x: 300, y: 700, hitRadius: 4, grazeRadius: 50 }; 
     let boss = { active: false, x: 300, y: -100, hp: 800, maxHp: 800, state: 'waiting', phase: 1, phaseTimer: 0 };
     
     let bullets = []; let enemyBullets = []; let enemies = []; let particles = [];
-    let activeSpell = null; let spellTimer = 0; let timeScale = 1.0; let screenShake = 0;
+    let activeSpell = null; let spellTimer = 0; let screenShake = 0;
 
     let touchActive = false; let targetX = player.x; let targetY = player.y;
     canvas.addEventListener('touchmove', e => {
@@ -204,18 +145,26 @@
         targetY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height);
     }, {passive: false});
 
+    function startGame() { 
+        document.getElementById('startScreen').style.display = 'none'; 
+        document.getElementById('gameUI').style.opacity = '1';
+        gameState = 'PLAYING'; lastTime = performance.now();
+        requestAnimationFrame(gameLoop); 
+    }
+
     function update(dt) {
+        if (gameState !== 'PLAYING') return; // 如果不是游玩状态，时间彻底静止！
+
         globalTime += dt;
         if (spellTimer > 0) {
             spellTimer -= dt;
-            if (spellTimer <= 0) { activeSpell = null; timeScale = 1.0; document.getElementById('spellAlert').innerText = ""; }
+            if (spellTimer <= 0) { activeSpell = null; }
         }
         if (screenShake > 0) screenShake -= dt * 20;
 
         if (touchActive) {
             player.x += (targetX - player.x) * 15 * dt; player.y += (targetY - player.y) * 15 * dt;
         }
-        // 限制不要跑出画布
         player.x = Math.max(50, Math.min(canvas.width - 50, player.x));
         player.y = Math.max(50, Math.min(canvas.height - 50, player.y));
 
@@ -230,28 +179,25 @@
                     bullets.push({x: player.x - 20, y: player.y, vx: 0, vy: -600});
                     bullets.push({x: player.x + 20, y: player.y, vx: 0, vy: -600});
                 }
-                if(!activeSpell) playerAtp -= 0.6; 
-                if(playerAtp < 0) playerAtp = 0;
+                if(!activeSpell) playerAtp -= 1.5; // 加快耗电速度，强制做题！
             }
             fireTimer = 0;
         }
 
+        // 🚨 核心逻辑：ATP 耗尽，强制弹窗做题！
+        if (playerAtp <= 0 && gameState === 'PLAYING') {
+            playerAtp = 0;
+            triggerFullScreenQuiz();
+        }
+
         let atpPercent = (playerAtp / MAX_ATP) * 100;
         document.getElementById('atpBar').style.width = atpPercent + '%';
-        document.getElementById('atpText').innerText = `能量储备 (ATP): ${Math.floor(atpPercent)}%`;
-        
-        let atpBox = document.getElementById('atpBox');
-        if (playerAtp < 20) {
-            atpBox.classList.add('atp-warning');
-            if(playerAtp === 0 && Math.floor(globalTime * 2) % 2 === 0) document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d; font-weight:bold;">🚨 哎呀！ATP 耗尽了！<br>小卫士发射不出抗体啦，快答题充能！</span>`;
-        } else {
-            atpBox.classList.remove('atp-warning');
-        }
+        document.getElementById('atpText').innerText = `ATP: ${Math.floor(atpPercent)}%`;
 
         if (score >= 1000 && !boss.active) { boss.active = true; boss.state = 'entering'; enemies = []; }
 
         if (boss.active) {
-            boss.phaseTimer += dt * timeScale;
+            boss.phaseTimer += dt;
             if (boss.state === 'entering') {
                 boss.y += 60 * dt; if (boss.y > 180) { boss.state = 'fighting'; boss.phase = 1; }
             } else if (boss.state === 'fighting') {
@@ -261,19 +207,12 @@
                     let angle1 = globalTime * 2.5; let angle2 = globalTime * 2.5 + Math.PI;
                     enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle1)*280, vy: Math.sin(angle1)*280, isRed: false});
                     enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle2)*280, vy: Math.sin(angle2)*280, isRed: false});
-                    if(boss.phase === 2 && boss.phaseTimer > 0.6) { 
-                        let dx = player.x - boss.x; let dy = player.y - boss.y;
-                        let angle = Math.atan2(dy, dx);
-                        enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle)*320, vy: Math.sin(angle)*320, isRed: true});
-                    }
                     boss.phaseTimer = 0;
                 }
-                if (boss.phase === 1 && boss.hp < 400) boss.phase = 2; 
             }
         } else {
-            spawnTimer += dt * timeScale;
+            spawnTimer += dt;
             if (spawnTimer > 1.0) {
-                // 半径调大，体积增加
                 enemies.push({ x: Math.random() * (canvas.width - 100) + 50, y: -50, radius: 35, vy: Math.random() * 50 + 80, hp: 2 });
                 spawnTimer = 0;
             }
@@ -282,19 +221,18 @@
         bullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; });
         bullets = bullets.filter(b => b.y > -20 && b.x > -20 && b.x < canvas.width + 20);
 
-        enemyBullets.forEach(b => { b.x += b.vx * dt * timeScale; b.y += b.vy * dt * timeScale; });
+        enemyBullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; });
         enemyBullets = enemyBullets.filter(b => b.y < canvas.height + 20 && b.x > -20 && b.x < canvas.width + 20);
 
-        enemies.forEach(e => e.y += e.vy * dt * timeScale);
+        enemies.forEach(e => e.y += e.vy * dt);
         enemies = enemies.filter(e => e.y < canvas.height + 60);
         
         particles.forEach(p => { p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.alpha -= dt * 2; });
         particles = particles.filter(p => p.alpha > 0);
 
-        // 打怪判定放大
+        // 碰撞检测
         for (let j = bullets.length - 1; j >= 0; j--) {
             let b = bullets[j]; let hit = false;
-            // Boss 碰撞体同步放大
             if (boss.active && boss.state === 'fighting' && Math.hypot(boss.x - b.x, boss.y - b.y) < 90) {
                 boss.hp--; bullets.splice(j, 1); hit = true; createExplosion(b.x, b.y, '#4ecdc4', 2);
                 if (boss.hp <= 0) { gameState = 'GAMEOVER'; winGame(); }
@@ -313,9 +251,7 @@
         function checkHit(ex, ey, er) {
             let distToPlayer = Math.hypot(ex - player.x, ey - player.y);
             if (activeSpell === 'er') return false; 
-            if (distToPlayer < er + player.grazeRadius && distToPlayer > er + player.hitRadius) {
-                updateScore(2); 
-            } else if (distToPlayer < er + player.hitRadius) {
+            if (distToPlayer < er + player.hitRadius) {
                 hp--; document.getElementById('hpDisplay').innerText = '❤️'.repeat(Math.max(0,hp)) + '🖤'.repeat(3-hp);
                 createExplosion(player.x, player.y, '#ff4d6d', 20); screenShake = 8;
                 if (hp <= 0) { gameState = 'GAMEOVER'; loseGame(); }
@@ -331,7 +267,6 @@
     function draw() {
         ctx.save();
         ctx.imageSmoothingEnabled = false; 
-        
         if (screenShake > 0) ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
 
         ctx.fillStyle = '#fff0f5'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -346,36 +281,22 @@
         });
         ctx.globalAlpha = 1.0;
 
-        // 👑 玩家立绘暴增：100 x 100！
+        // 👑 修复芝麻粒小可爱！原尺寸100，为了抵消透明边框，直接强行画 240x240！
         if (assets.player.complete && assets.player.naturalWidth) {
-            ctx.drawImage(assets.player, player.x - 50, player.y - 50, 100, 100);
-            if(activeSpell === 'er') {
-                ctx.beginPath(); ctx.arc(player.x, player.y, 60, 0, Math.PI*2);
-                ctx.strokeStyle = '#4ecdc4'; ctx.lineWidth = 4; ctx.stroke();
-            }
+            // 注意这里的绘制尺寸，如果图片透明边距太大，就用大尺寸！
+            ctx.drawImage(assets.player, player.x - 120, player.y - 120, 240, 240);
         }
         ctx.beginPath(); ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI*2); 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.fill();
 
-        // 👑 大魔王暴增：240 x 240！
-        if (boss.active) {
-            if (assets.enemyBoss.complete && assets.enemyBoss.naturalWidth) {
-                ctx.drawImage(assets.enemyBoss, boss.x - 120, boss.y - 120, 240, 240);
-            }
-            // 血条往上挪，不要挡住立绘
-            ctx.fillStyle = 'rgba(255,133,162,0.3)'; ctx.fillRect(boss.x - 60, boss.y - 130, 120, 10);
-            ctx.fillStyle = '#ff4d6d'; ctx.fillRect(boss.x - 60, boss.y - 130, 120 * (boss.hp/boss.maxHp), 10);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(boss.x - 60, boss.y - 130, 120, 10);
-        }
-
-        // 👑 杂兵暴增：80 x 80！
+        // 👑 杂兵尺寸同步放大对抗透明边距
         enemies.forEach(e => {
             if (assets.enemyNormal.complete && assets.enemyNormal.naturalWidth) {
-                ctx.drawImage(assets.enemyNormal, e.x - 40, e.y - 40, 80, 80);
+                ctx.drawImage(assets.enemyNormal, e.x - 80, e.y - 80, 160, 160);
             }
         });
         
-        // 👑 抗体子弹暴增：48 x 48！
+        // 👑 子弹画 48x48
         bullets.forEach(b => {
             if (assets.bullet.complete && assets.bullet.naturalWidth) {
                 ctx.drawImage(assets.bullet, b.x - 24, b.y - 24, 48, 48);
@@ -388,13 +309,11 @@
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
         });
 
-        if(!boss.active) {
-            ctx.fillStyle = '#4a4a4a'; ctx.font = 'bold 15px "Segoe UI"';
-            ctx.fillText(`培养皿清理进度: ${Math.min(100, Math.floor(score/10))}%`, 15, 30);
-        } else if(boss.state === 'entering') {
-            ctx.fillStyle = '#ff4d6d'; ctx.font = '900 28px "Segoe UI"'; ctx.textAlign = 'center';
-            ctx.fillText('🚨 恶性细胞 捣乱中 🚨', canvas.width/2, canvas.height/2);
+        // 滤镜：如果正在做题，游戏画面变暗模糊
+        if(gameState === 'QUIZ_PAUSE') {
+            ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(0,0,canvas.width, canvas.height);
         }
+
         ctx.restore();
     }
 
@@ -402,65 +321,84 @@
         for(let k=0; k<count; k++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, size: Math.random()*4+2, alpha: 1, color: color });
     }
     
-    function updateScore(pts) { score += pts; document.getElementById('scoreDisplay').innerText = `ATP积分: ${score}`; }
+    function updateScore(pts) { score += pts; document.getElementById('scoreDisplay').innerText = `${score} 分`; }
 
     function gameLoop(timestamp) {
-        if (gameState !== 'PLAYING') return;
         let dt = (timestamp - lastTime) / 1000; if (dt > 0.05) dt = 0.05; 
-        lastTime = timestamp; update(dt); draw();
-        requestAnimationFrame(gameLoop);
+        lastTime = timestamp; 
+        update(dt); 
+        draw();
+        requestAnimationFrame(gameLoop); // 即使暂停也继续画，保持静止帧
     }
 
-    function loseGame() {
-        document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d; font-size:1.2rem; font-weight:bold;">呜哇！细胞膜破掉啦！<br>培养皿被捣蛋鬼占领了。<br>最终积分: ${score}</span>`;
-        document.getElementById('optionsGroup').innerHTML = `<button class="btn-action" onclick="location.reload()">重新洗手戴手套 (再来一次)</button>`;
-        document.getElementById('quizBtn').style.display = 'none';
-    }
-    function winGame() {
-        document.getElementById('questionText').innerHTML = `<span style="color:#4ecdc4; font-size:1.2rem; font-weight:bold;">🎉 太棒啦！变异细胞被彻底赶跑了！<br>你成功守护了微观世界的和平！</span>`;
-        document.getElementById('optionsGroup').innerHTML = `<button class="btn-action" onclick="location.reload()">填写实验报告 (通关)</button>`;
-        document.getElementById('quizBtn').style.display = 'none';
-    }
-
+    // ==========================================
+    // 🚨 全屏强制做题系统
+    // ==========================================
     const spellCards = [
-        { id: 'golgi', name: '🌸 高尔基体·囊泡散花', desc: '能量全满！你的抗体变成了超大范围散弹！', duration: 6, action: () => {} },
-        { id: 'lysosome', name: '💦 溶酶体·水解大扫除', desc: '能量全满！水解酶爆发，屏幕上的坏蛋全部被洗掉啦！', duration: 2, action: () => { enemies.forEach(e => createExplosion(e.x, e.y, '#4ecdc4', 15)); enemies = []; enemyBullets = []; screenShake=8; } },
-        { id: 'ribosome', name: '❄️ 微管·纺锤体冻结', desc: '能量全满！细胞液变得黏糊糊，坏蛋们全都慢动作啦！', duration: 5, action: () => { timeScale = 0.3; } }
+        { id: 'golgi', name: '🌸 高尔基体·囊泡散花', desc: '满血复活！你的抗体变成了超大范围散弹！', duration: 6, action: () => {} },
+        { id: 'lysosome', name: '💦 溶酶体·水解大扫除', desc: '满血复活！屏幕上的坏蛋全部被水解酶洗掉啦！', duration: 2, action: () => { enemies.forEach(e => createExplosion(e.x, e.y, '#4ecdc4', 15)); enemies = []; enemyBullets = []; screenShake=8; } }
     ];
 
     const quizBank = [
         { q: "在细胞里，负责加工、分类和包装蛋白质，像个超级『快递物流中心』的细胞器是？", ans: "高尔基体", options: ["内质网", "高尔基体", "溶酶体"] },
         { q: "癌细胞为什么会在身体里到处跑？是因为它们细胞膜表面的什么东西减少了，导致粘不紧？", ans: "糖蛋白", options: ["磷脂分子", "糖蛋白", "胆固醇"] },
-        { q: "被大家叫做『动力工厂』，能疯狂产生 ATP 能量给小卫士充能的细胞器是？", ans: "线粒体", options: ["高尔基体", "叶绿体", "线粒体"] },
-        { q: "能按照密码本(mRNA)的指示，把一个个氨基酸像串珠子一样合成蛋白质的『小机器』是？", ans: "核糖体", options: ["核糖体", "溶酶体", "中心体"] }
+        { q: "被大家叫做『动力工厂』，能疯狂产生 ATP 能量的细胞器是？", ans: "线粒体", options: ["高尔基体", "叶绿体", "线粒体"] },
+        { q: "能按照密码本(mRNA)的指示，把氨基酸合成蛋白质的『小机器』是？", ans: "核糖体", options: ["核糖体", "溶酶体", "中心体"] }
     ];
 
-    function triggerQuiz() {
-        if(gameState !== 'PLAYING') return;
+    function triggerFullScreenQuiz() {
+        gameState = 'QUIZ_PAUSE'; // 彻底冻结游戏时间！
+        document.getElementById('quizScreen').style.display = 'flex';
+        
         let data = quizBank[Math.floor(Math.random() * quizBank.length)];
-        document.getElementById('questionText').innerHTML = `<strong>👩‍⚕️ 导师提问：</strong><br>${data.q}`;
+        document.getElementById('questionText').innerHTML = data.q;
+        
         let optDiv = document.getElementById('optionsGroup'); optDiv.innerHTML = '';
         data.options.sort(() => Math.random() - 0.5).forEach(opt => {
-            optDiv.innerHTML += `<label class="option-label" onclick="checkAnswer('${opt}', '${data.ans}')"><input type="radio" name="ans" style="accent-color: var(--primary);"> <strong>${opt}</strong></label>`;
+            optDiv.innerHTML += `<label class="option-label" onclick="checkAnswer('${opt}', '${data.ans}')"><input type="radio" name="ans"> <strong>${opt}</strong></label>`;
         });
-        document.getElementById('quizBtn').style.display = 'none'; 
     }
 
     function checkAnswer(selected, correct) {
         if(selected === correct) {
+            // 答对了解除时停，恢复能量
             playerAtp = MAX_ATP; 
+            document.getElementById('quizScreen').style.display = 'none';
+            gameState = 'PLAYING';
+            lastTime = performance.now(); // 重置时间，防止卡顿瞬间位移
+            
             let spell = spellCards[Math.floor(Math.random() * spellCards.length)];
             activeSpell = spell.id; spellTimer = spell.duration; spell.action();
-            document.getElementById('spellAlert').innerHTML = `${spell.name}`;
-            document.getElementById('questionText').innerHTML = `<span style="color:#4ecdc4; font-weight:800;">[回答正确，满分！]</span><br>${spell.desc}`;
+            
+            // 屏幕飘字特效
+            let alertEl = document.getElementById('spellAlert');
+            alertEl.innerText = spell.name;
+            alertEl.style.opacity = '1';
+            setTimeout(() => { alertEl.style.opacity = '0'; }, 2000);
+            
         } else {
-            playerAtp -= 20; 
-            if(playerAtp < 0) playerAtp = 0;
-            document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d; font-weight:bold;">[回答错误，打手心！] <br>正确答案是：${correct}<br>惩罚：扣除 20 点 ATP。</span>`;
-            screenShake = 5; 
+            // 答错了不让走，扣血惩罚！
+            hp--; document.getElementById('hpDisplay').innerText = '❤️'.repeat(Math.max(0,hp)) + '🖤'.repeat(3-hp);
+            if (hp <= 0) {
+                document.getElementById('quizScreen').style.display = 'none';
+                gameState = 'GAMEOVER'; loseGame();
+            } else {
+                document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d;">❌ 答错啦！导师很生气，扣除一滴血！<br>再好好想想正确答案是啥？</span>`;
+                // 重新出同一题的选项
+                let optDiv = document.getElementById('optionsGroup'); 
+                let labels = optDiv.getElementsByClassName('option-label');
+                for(let l of labels) l.style.border = '2px solid #ff4d6d';
+            }
         }
-        document.getElementById('optionsGroup').innerHTML = ''; 
-        setTimeout(() => { if(gameState==='PLAYING') document.getElementById('quizBtn').style.display = 'block'; }, 1500); 
+    }
+
+    function loseGame() {
+        document.getElementById('startScreen').style.display = 'flex';
+        document.querySelector('.story-text').innerHTML = `<span style="color:#ff4d6d; font-size:1.5rem; font-weight:bold;">呜哇！细胞膜破掉啦！<br>最终得分: ${score}</span>`;
+    }
+    function winGame() {
+        document.getElementById('startScreen').style.display = 'flex';
+        document.querySelector('.story-text').innerHTML = `<span style="color:#4ecdc4; font-size:1.5rem; font-weight:bold;">🎉 变异细胞已被消灭！<br>最终得分: ${score}</span>`;
     }
 </script>
 </body>
