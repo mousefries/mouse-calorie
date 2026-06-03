@@ -24,7 +24,6 @@
             image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; image-rendering: pixelated;
         }
         
-        /* 状态栏极简处理 */
         .status-bar {
             background: rgba(255, 255, 255, 0.95); padding: 12px 20px;
             display: flex; justify-content: space-between; align-items: center;
@@ -41,7 +40,6 @@
         .atp-container { flex: 1; margin: 0 20px; background: #ffe3e8; border-radius: 12px; height: 20px; position: relative; overflow: hidden; border: 2px solid var(--primary); }
         .atp-bar { height: 100%; background: linear-gradient(90deg, #ff85a2, #ff9eb5); width: 100%; transition: width 0.1s linear; }
         
-        /* 正式感菜单按钮 */
         .btn-menu {
             background: #fff; color: var(--primary); border: 2px solid var(--primary);
             padding: 15px 30px; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 250px;
@@ -52,17 +50,15 @@
         .btn-menu:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(255, 133, 162, 0.4); }
         .btn-menu:active { transform: translateY(1px); }
 
-        /* 全屏 Overlay 通用样式 */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(253, 246, 227, 0.95); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); overflow-y: auto;
         }
         
-        /* 🚨 时停答题面板 */
         .quiz-modal {
             background: white; border: 4px solid var(--secondary); border-radius: 20px; padding: 30px;
-            width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); text-align: center;
+            width: 90%; max-width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); text-align: center;
         }
         #questionText { color: var(--text-main); font-size: 1.15rem; line-height: 1.6; margin: 20px 0; font-weight: 800; }
         .option-label {
@@ -71,10 +67,8 @@
         }
         .option-label:hover { background: #f0fdfa; border-color: var(--secondary); transform: translateY(-2px); }
 
-        /* 图鉴与故事排版 */
         .modal-content { background: #fff; border: 3px solid #ffe3e8; padding: 30px; border-radius: 20px; max-width: 700px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .modal-content h2 { color: var(--primary); text-align: center; border-bottom: 2px dashed #ffe3e8; padding-bottom: 15px; margin-top: 0; }
-        .story-text { line-height: 1.8; font-size: 1.1rem; color: #555; text-align: justify; margin-bottom: 20px; }
         
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .gallery-card { display: flex; align-items: center; gap: 15px; background: #fafafa; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
@@ -85,31 +79,38 @@
 </head>
 <body>
 
-    <!-- 🌟 正式版主菜单 -->
     <div id="startScreen" class="overlay">
-        <h1 style="color: var(--primary); font-size: 3rem; text-align: center; margin-bottom: 40px; letter-spacing: 4px; text-shadow: 0 4px 15px rgba(255,133,162,0.2);">
+        <h1 style="color: var(--primary); font-size: 3.5rem; text-align: center; margin-bottom: 40px; letter-spacing: 4px; text-shadow: 0 4px 15px rgba(255,133,162,0.2);">
             微观防线<br><span style="font-size: 1.2rem; color: var(--secondary); letter-spacing: 8px;">CELLULAR DEFENSE</span>
         </h1>
         
-        <button class="btn-menu primary" onclick="startGame()">▶ 开始执行</button>
-        <button class="btn-menu" onclick="openScreen('storyScreen')">📖 档案记载</button>
-        <button class="btn-menu" onclick="openScreen('galleryScreen')">🔬 细胞图鉴</button>
+        <button class="btn-menu primary" onclick="showBriefing()">▶ 接入显微镜视野</button>
+        <button class="btn-menu" onclick="openScreen('galleryScreen')">🔬 细胞图鉴档案</button>
     </div>
 
-    <!-- 📖 背景故事档案 -->
-    <div id="storyScreen" class="overlay" style="display: none;">
-        <div class="modal-content">
-            <h2>微观档案：代号 C-01</h2>
-            <div class="story-text">
-                <p>在显微镜无法触及的幽深组织液中，稳态正在被打破。</p>
-                <p>原癌基因的突变导致了局部细胞失去了“接触抑制”特性，它们正在疯狂夺取营养，演化为极具侵略性的<strong>恶性克隆体</strong>。</p>
-                <p>作为免疫系统最后的防线，特异性 T 淋巴细胞（CTL）已被唤醒。你必须深入病灶，通过发射穿孔素彻底清除这些变异组织。但请记住：每一次开火都在剧烈消耗着细胞内的 <strong>ATP</strong>，唯有不断解析细胞生物学的底层法则，才能让能量生生不息。</p>
+    <div id="introBriefing" class="overlay" style="display: none; background: rgba(0,0,0,0.75); z-index: 200;">
+        <div class="quiz-modal" style="max-width: 600px; text-align: left; border-color: var(--primary);">
+            <h2 style="color: var(--primary); text-align: center; font-size: 1.8rem; margin-top: 0; border-bottom: 2px dashed #ffe3e8; padding-bottom: 15px;">⚠️ 紧急微观介入任务</h2>
+            
+            <div style="font-size: 1.05rem; line-height: 1.6; color: var(--text-main); margin-top: 20px; margin-bottom: 25px;">
+                <p><strong>【致 特异性免疫系统】：</strong></p>
+                <p>显微镜视野下检测到极度危险的异常增殖信号！部分组织细胞因原癌基因突变，已彻底失去“接触抑制”，演化为极具侵略性的<strong>恶性克隆体</strong>。</p>
+                <p>它们正在培养皿中疯狂掠夺营养，企图建立全新的肿瘤微环境！你将被立即唤醒，作为最精锐的<strong>效应 T 细胞 (CTL)</strong> 空降病灶区域！</p>
+                
+                <div style="background: #ffe3e8; border-left: 5px solid #ff4d6d; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <strong style="color: #ff4d6d; font-size: 1.1rem;">🚨 战前最高机密：</strong><br>
+                    发射特异性抗体会剧烈消耗你体内的 <strong style="color: #ff4d6d;">ATP</strong>。一旦能量枯竭，时空将陷入冻结，你必须立刻接入【学术中枢】，正确解析细胞生物学通路才能重新充能！
+                </div>
+                
+                <p style="text-align: center; color: var(--secondary); font-weight: bold; margin-top: 15px; font-size: 0.95rem;">
+                    [ 电脑端：WASD/方向键/鼠标控制 | 移动端：触控滑动 ]
+                </p>
             </div>
-            <div style="text-align: center;"><button class="btn-menu" onclick="closeScreen('storyScreen')">返回终端</button></div>
+            
+            <button class="btn-menu primary" style="width: 100%; max-width: 100%; font-size: 1.2rem;" onclick="startActualGame()">🚀 明白！立即空降病灶！</button>
         </div>
     </div>
 
-    <!-- 🔬 正式版图鉴 -->
     <div id="galleryScreen" class="overlay" style="display: none;">
         <div class="modal-content">
             <h2>免疫系统监测图鉴</h2>
@@ -135,17 +136,15 @@
         </div>
     </div>
 
-    <!-- 🚨 强制时停答题界面 -->
     <div id="quizScreen" class="overlay" style="display: none; background: rgba(0,0,0,0.65);">
         <div class="quiz-modal">
             <h2 style="color: #ff4d6d; margin-top: 0; font-size: 1.5rem;">🚨 ATP 能量枯竭</h2>
-            <p style="color: #888; font-size: 0.9rem;">系统已强制暂停。请解析以下生化通路以重置 ATP：</p>
+            <p style="color: #888; font-size: 0.9rem;">系统已强制暂停。请解析以下高级细胞生物学通路以重置 ATP：</p>
             <div id="questionText">获取题目中...</div>
             <div id="optionsGroup"></div>
         </div>
     </div>
 
-    <!-- 🎮 游戏主界 -->
     <div class="main-layout" id="gameUI" style="opacity: 0;">
         <div class="status-bar">
             <div class="hp-hearts" id="hpDisplay">❤️❤️❤️</div>
@@ -176,30 +175,51 @@
     
     let lastTime = performance.now(); let fireTimer = 0; let spawnTimer = 0; let globalTime = 0;
     
-    const player = { x: 300, y: 700, hitRadius: 4, grazeRadius: 45 }; 
+    const player = { x: 300, y: 700, hitRadius: 4, grazeRadius: 45, speed: 500 }; 
     let boss = { active: false, x: 300, y: -100, hp: 800, maxHp: 800, state: 'waiting', phase: 1, phaseTimer: 0 };
     
     let bullets = []; let enemyBullets = []; let enemies = []; let particles = [];
     let activeSpell = null; let spellTimer = 0; let screenShake = 0;
 
-    let touchActive = false; let targetX = player.x; let targetY = player.y;
-    canvas.addEventListener('touchmove', e => {
+    let touchActive = false; 
+    let targetX = player.x; let targetY = player.y;
+    
+    function updateTouchTarget(e) {
         if(gameState !== 'PLAYING') return;
-        e.preventDefault(); touchActive = true;
+        e.preventDefault(); 
+        touchActive = true; 
         let rect = canvas.getBoundingClientRect();
-        targetX = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
-        targetY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height);
-    }, {passive: false});
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        targetX = (clientX - rect.left) * (canvas.width / rect.width);
+        targetY = (clientY - rect.top) * (canvas.height / rect.height);
+    }
+    canvas.addEventListener('touchmove', updateTouchTarget, {passive: false});
+    canvas.addEventListener('mousemove', updateTouchTarget);
+
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    window.addEventListener('keydown', e => { 
+        if(keys.hasOwnProperty(e.key)) { keys[e.key] = true; touchActive = false; }
+    });
+    window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 
     function openScreen(id) { document.getElementById(id).style.display = 'flex'; }
     function closeScreen(id) { document.getElementById(id).style.display = 'none'; }
     
-    function startGame() { 
+    // 💡 关键修改：点击开始不直接进入游戏，而是先弹出任务简报！
+    function showBriefing() { 
         document.getElementById('startScreen').style.display = 'none'; 
+        document.getElementById('introBriefing').style.display = 'flex';
+    }
+
+    // 点击“明白！”后，真正进入战场
+    function startActualGame() {
+        document.getElementById('introBriefing').style.display = 'none';
         document.getElementById('gameUI').style.opacity = '1';
         hp = 3; score = 0; playerAtp = 100;
         document.getElementById('hpDisplay').innerText = '❤️❤️❤️';
         updateScore(0);
+        availableQuestions = [...quizBank];
         gameState = 'PLAYING'; lastTime = performance.now();
         requestAnimationFrame(gameLoop); 
     }
@@ -215,7 +235,19 @@
         if (screenShake > 0) screenShake -= dt * 20;
 
         if (touchActive) {
-            player.x += (targetX - player.x) * 15 * dt; player.y += (targetY - player.y) * 15 * dt;
+            player.x += (targetX - player.x) * 15 * dt; 
+            player.y += (targetY - player.y) * 15 * dt;
+        } else {
+            let dx = 0, dy = 0;
+            if (keys.w || keys.ArrowUp) dy -= 1;
+            if (keys.s || keys.ArrowDown) dy += 1;
+            if (keys.a || keys.ArrowLeft) dx -= 1;
+            if (keys.d || keys.ArrowRight) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                let length = Math.hypot(dx, dy);
+                player.x += (dx / length) * player.speed * dt;
+                player.y += (dy / length) * player.speed * dt;
+            }
         }
         player.x = Math.max(50, Math.min(canvas.width - 50, player.x));
         player.y = Math.max(50, Math.min(canvas.height - 50, player.y));
@@ -231,8 +263,6 @@
                     bullets.push({x: player.x - 20, y: player.y, vx: 0, vy: -600});
                     bullets.push({x: player.x + 20, y: player.y, vx: 0, vy: -600});
                 }
-                
-                // ⚖️ 平衡调校：每次射击扣 3 点，保持完美的答题节奏
                 if(!activeSpell) playerAtp -= 3; 
             }
             fireTimer = 0;
@@ -283,7 +313,6 @@
 
         for (let j = bullets.length - 1; j >= 0; j--) {
             let b = bullets[j]; let hit = false;
-            // Boss 受击范围
             if (boss.active && boss.state === 'fighting' && Math.hypot(boss.x - b.x, boss.y - b.y) < 90) {
                 boss.hp--; bullets.splice(j, 1); hit = true; createExplosion(b.x, b.y, '#4ecdc4', 2);
                 if (boss.hp <= 0) { gameState = 'GAMEOVER'; winGame(); }
@@ -352,10 +381,8 @@
         
         if (boss.active) {
             if (assets.enemyBoss.complete && assets.enemyBoss.naturalWidth) {
-                // 📏 大魔王尺寸暴增，霸屏压迫感！
                 ctx.drawImage(assets.enemyBoss, boss.x - 160, boss.y - 160, 320, 320);
             }
-            // 🩸 血条往上挪，避免挡住它头上的眼睛
             ctx.fillStyle = 'rgba(255,133,162,0.3)'; ctx.fillRect(boss.x - 60, boss.y - 150, 120, 8);
             ctx.fillStyle = '#ff4d6d'; ctx.fillRect(boss.x - 60, boss.y - 150, 120 * (boss.hp/boss.maxHp), 8);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(boss.x - 60, boss.y - 150, 120, 8);
@@ -386,26 +413,35 @@
         requestAnimationFrame(gameLoop); 
     }
 
-    // ==========================================
-    // 🚨 全屏题库系统
-    // ==========================================
     const spellCards = [
         { id: 'golgi', name: '🌸 高尔基体·散花', duration: 6, action: () => {} },
         { id: 'lysosome', name: '💦 溶酶体·大扫除', duration: 2, action: () => { enemies.forEach(e => createExplosion(e.x, e.y, '#4ecdc4', 15)); enemies = []; enemyBullets = []; screenShake=8; } }
     ];
 
     const quizBank = [
-        { q: "细胞内的『加工、分类、包装中心』，负责蛋白质的修饰与分拣的是？", ans: "高尔基体", options: ["内质网", "高尔基体", "溶酶体"] },
-        { q: "能够通过有氧呼吸产生大量 ATP，被称为『动力工厂』的细胞器是？", ans: "线粒体", options: ["高尔基体", "叶绿体", "线粒体"] },
-        { q: "负责将游离氨基酸合成为蛋白质多肽链的『生产机器』是？", ans: "核糖体", options: ["核糖体", "溶酶体", "中心体"] },
-        { q: "包含多种酸性水解酶，负责分解衰老细胞器和外来异物的『消化车间』是？", ans: "溶酶体", options: ["内质网", "溶酶体", "高尔基体"] }
+        { q: "介导细胞内囊泡与靶膜准确融合的特异性跨膜蛋白复合体是？", ans: "SNARE蛋白", options: ["SNARE蛋白", "网格蛋白 (Clathrin)", "COP I / COP II"] },
+        { q: "细胞凋亡途径中，由线粒体释放至胞质，诱导凋亡小体形成的关键物质是？", ans: "细胞色素c", options: ["细胞色素c", "穿孔素", "钙离子"] },
+        { q: "粗面内质网上，负责识别新生肽链的信号序列并引导核糖体结合到内质网膜上的复合物是？", ans: "SRP (信号识别颗粒)", options: ["SRP (信号识别颗粒)", "泛素连接酶", "分子伴侣"] },
+        { q: "驱动细胞内物质沿着微管向负端（中心体方向）运输的马达蛋白是？", ans: "动力蛋白 (Dynein)", options: ["动力蛋白 (Dynein)", "驱动蛋白 (Kinesin)", "肌球蛋白 (Myosin)"] },
+        { q: "在 G蛋白偶联受体（GPCR）介导的信号通路中，能特异性促进内质网释放钙离子的第二信使是？", ans: "IP3 (三磷酸肌醇)", options: ["IP3 (三磷酸肌醇)", "cAMP", "DAG (二脂酰甘油)"] },
+        { q: "能够特异性识别并降解被泛素化标记的靶蛋白的细胞内大分子复合体是？", ans: "蛋白酶体 (Proteasome)", options: ["蛋白酶体 (Proteasome)", "溶酶体", "自噬小体"] },
+        { q: "细胞周期中，催化细胞从 G2 期进入 M 期的关键激酶复合体是？", ans: "MPF (成熟促进因子)", options: ["MPF (成熟促进因子)", "APC/C复合物", "p53蛋白"] },
+        { q: "在有丝分裂后期，负责切断姐妹染色单体间黏连蛋白，使染色体得以分离的酶是？", ans: "分离酶 (Separase)", options: ["分离酶 (Separase)", "DNA解旋酶", "端粒酶"] },
+        { q: "介导内质网向高尔基体进行顺向转运（Anterograde transport）的囊泡包被蛋白是？", ans: "COP II", options: ["COP II", "COP I", "网格蛋白 (Clathrin)"] },
+        { q: "真核细胞中，具有极性且呈现『踏车行为』（Treadmilling）的细胞骨架是？", ans: "微管和微丝", options: ["微管和微丝", "仅中间纤维", "细胞外基质"] }
     ];
+
+    let availableQuestions = [];
 
     function triggerFullScreenQuiz() {
         gameState = 'QUIZ_PAUSE'; 
         document.getElementById('quizScreen').style.display = 'flex';
         
-        let data = quizBank[Math.floor(Math.random() * quizBank.length)];
+        if (availableQuestions.length === 0) { availableQuestions = [...quizBank]; }
+        
+        let qIndex = Math.floor(Math.random() * availableQuestions.length);
+        let data = availableQuestions.splice(qIndex, 1)[0];
+        
         document.getElementById('questionText').innerHTML = data.q;
         
         let optDiv = document.getElementById('optionsGroup'); optDiv.innerHTML = '';
@@ -433,7 +469,7 @@
                 document.getElementById('quizScreen').style.display = 'none';
                 gameState = 'GAMEOVER'; loseGame();
             } else {
-                document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d;">❌ 错误！细胞膜受损！<br>正确选项包含：${correct.substring(0,2)}...</span>`;
+                document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d;">❌ 错误！细胞膜受损！<br>请重新选择！提示：${correct.substring(0,2)}...</span>`;
                 let labels = document.getElementById('optionsGroup').getElementsByClassName('option-label');
                 for(let l of labels) l.style.border = '2px solid #ff4d6d';
             }
@@ -442,11 +478,11 @@
 
     function loseGame() {
         document.getElementById('startScreen').style.display = 'flex';
-        document.querySelector('.story-text').innerHTML = `<p style="color:#ff4d6d; font-size:1.5rem; font-weight:bold; text-align:center;">任务失败<br><span style="font-size:1.1rem; color:#555;">最终稳态积分: ${score}</span></p>`;
+        document.querySelector('#startScreen h1').innerHTML = `微观防线<br><span style="font-size: 1.2rem; color: #ff4d6d; letter-spacing: 4px;">MISSION FAILED</span>`;
     }
     function winGame() {
         document.getElementById('startScreen').style.display = 'flex';
-        document.querySelector('.story-text').innerHTML = `<p style="color:#4ecdc4; font-size:1.5rem; font-weight:bold; text-align:center;">清理完成<br><span style="font-size:1.1rem; color:#555;">最终稳态积分: ${score}</span></p>`;
+        document.querySelector('#startScreen h1').innerHTML = `微观防线<br><span style="font-size: 1.2rem; color: #4ecdc4; letter-spacing: 4px;">CLEAR!</span>`;
     }
 </script>
 </body>
