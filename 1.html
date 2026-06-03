@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>细胞防卫战：微观前线</title>
+    <style>
+        /* 🌸 高级极简治愈系主题 */
+        :root { --primary: #ff85a2; --secondary: #4ecdc4; --text-main: #4a4a4a; --bg-light: #fdf6e3; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0; height: 100dvh; display: flex; flex-direction: column;
+            background-color: var(--bg-light); color: var(--text-main);
+            font-family: 'Segoe UI', 'Nunito', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; user-select: none;
+            background-image: radial-gradient(rgba(255, 133, 162, 0.15) 2px, transparent 2px); background-size: 30px 30px;
+        }
+
+        .main-layout { display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; }
+        .game-container { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #fff0f5; }
+        canvas {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            box-shadow: 0 10px 30px rgba(255, 133, 162, 0.15); 
+            image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; image-rendering: pixelated;
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95); padding: 12px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 3px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.03); z-index: 10;
+        }
+        
+        @media (min-width: 800px) {
+            .main-layout { padding: 20px; align-items: center; justify-content: center; }
+            .status-bar { border-radius: 20px 20px 0 0; width: 600px; border-bottom: none; border: 4px solid var(--primary); border-bottom: none; }
+            .game-container { flex: none; height: 85vh; width: 600px; border-radius: 0 0 20px 20px; border: 4px solid var(--primary); border-top: none; overflow: hidden; }
+        }
+
+        .hp-hearts { font-size: 1.4rem; letter-spacing: 2px; color: #ff4d6d; }
+        .atp-container { flex: 1; margin: 0 20px; background: #ffe3e8; border-radius: 12px; height: 20px; position: relative; overflow: hidden; border: 2px solid var(--primary); }
+        .atp-bar { height: 100%; background: linear-gradient(90deg, #ff85a2, #ff9eb5); width: 100%; transition: width 0.1s linear; }
+        
+        .btn-menu {
+            background: #fff; color: var(--primary); border: 2px solid var(--primary);
+            padding: 15px 30px; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 250px;
+            cursor: pointer; transition: 0.2s; border-radius: 30px; margin: 10px 0; letter-spacing: 2px;
+            box-shadow: 0 4px 10px rgba(255, 133, 162, 0.2);
+        }
+        .btn-menu.primary { background: var(--primary); color: #fff; }
+        .btn-menu:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(255, 133, 162, 0.4); }
+        .btn-menu:active { transform: translateY(1px); }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(253, 246, 227, 0.95); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); overflow-y: auto;
+        }
+        
+        .quiz-modal {
+            background: white; border: 4px solid var(--secondary); border-radius: 20px; padding: 30px;
+            width: 90%; max-width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); text-align: center;
+        }
+        #questionText { color: var(--text-main); font-size: 1.15rem; line-height: 1.6; margin: 20px 0; font-weight: 800; }
+        .option-label {
+            display: block; margin-bottom: 12px; padding: 15px; background: #f8f9fa; border: 2px solid #e9ecef;
+            border-radius: 12px; cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: 700; font-size: 1.05rem;
+        }
+        .option-label:hover { background: #f0fdfa; border-color: var(--secondary); transform: translateY(-2px); }
+
+        .modal-content { background: #fff; border: 3px solid #ffe3e8; padding: 30px; border-radius: 20px; max-width: 700px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .modal-content h2 { color: var(--primary); text-align: center; border-bottom: 2px dashed #ffe3e8; padding-bottom: 15px; margin-top: 0; }
+        
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .gallery-card { display: flex; align-items: center; gap: 15px; background: #fafafa; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
+        .gallery-card img { width: 64px; height: 64px; image-rendering: pixelated; background: #fdf6e3; border-radius: 10px; padding: 5px; border: 1px solid #ffe3e8;}
+        .gallery-info h4 { margin: 0 0 5px 0; color: var(--primary); }
+        .gallery-info p { margin: 0; font-size: 0.85rem; color: #777; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen" class="overlay">
+        <h1 style="color: var(--primary); font-size: 3.5rem; text-align: center; margin-bottom: 40px; letter-spacing: 4px; text-shadow: 0 4px 15px rgba(255,133,162,0.2);">
+            微观防线<br><span style="font-size: 1.2rem; color: var(--secondary); letter-spacing: 8px;">CELLULAR DEFENSE</span>
+        </h1>
+        
+        <button class="btn-menu primary" onclick="showBriefing()">▶ 接入显微镜视野</button>
+        <button class="btn-menu" onclick="openScreen('galleryScreen')">🔬 细胞图鉴档案</button>
+    </div>
+
+    <div id="introBriefing" class="overlay" style="display: none; background: rgba(0,0,0,0.75); z-index: 200;">
+        <div class="quiz-modal" style="max-width: 600px; text-align: left; border-color: var(--primary);">
+            <h2 style="color: var(--primary); text-align: center; font-size: 1.8rem; margin-top: 0; border-bottom: 2px dashed #ffe3e8; padding-bottom: 15px;">⚠️ 紧急微观介入任务</h2>
+            
+            <div style="font-size: 1.05rem; line-height: 1.6; color: var(--text-main); margin-top: 20px; margin-bottom: 25px;">
+                <p><strong>【致 特异性免疫系统】：</strong></p>
+                <p>显微镜视野下检测到极度危险的异常增殖信号！部分组织细胞因原癌基因突变，已彻底失去“接触抑制”，演化为极具侵略性的<strong>恶性克隆体</strong>。</p>
+                <p>它们正在培养皿中疯狂掠夺营养，企图建立全新的肿瘤微环境！你将被立即唤醒，作为最精锐的<strong>效应 T 细胞 (CTL)</strong> 空降病灶区域！</p>
+                
+                <div style="background: #ffe3e8; border-left: 5px solid #ff4d6d; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <strong style="color: #ff4d6d; font-size: 1.1rem;">🚨 战前最高机密：</strong><br>
+                    发射特异性抗体会剧烈消耗你体内的 <strong style="color: #ff4d6d;">ATP</strong>。一旦能量枯竭，时空将陷入冻结，你必须立刻接入【学术中枢】，正确解析细胞生物学通路才能重新充能！
+                </div>
+                
+                <p style="text-align: center; color: var(--secondary); font-weight: bold; margin-top: 15px; font-size: 0.95rem;">
+                    [ 电脑端：WASD/方向键/鼠标控制 | 移动端：触控滑动 ]
+                </p>
+            </div>
+            
+            <button class="btn-menu primary" style="width: 100%; max-width: 100%; font-size: 1.2rem;" onclick="startActualGame()">🚀 明白！立即空降病灶！</button>
+        </div>
+    </div>
+
+    <div id="galleryScreen" class="overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>免疫系统监测图鉴</h2>
+            <div class="gallery-grid">
+                <div class="gallery-card">
+                    <img src="images/image_16.png" alt="Player">
+                    <div class="gallery-info"><h4>效应 T 细胞 (主角)</h4><p>执行细胞免疫的核心。能精准识别病变细胞并诱导其凋亡。</p></div>
+                </div>
+                <div class="gallery-card">
+                    <img src="images/image_17.png" alt="Enemy">
+                    <div class="gallery-info"><h4>游离病原体 (敌方单位)</h4><p>突破防线的微小病原体，会对细胞膜稳定性造成持续破坏。</p></div>
+                </div>
+                <div class="gallery-card">
+                    <img src="images/image_18.png" alt="Boss">
+                    <div class="gallery-info"><h4>恶性克隆体 (高危实体)</h4><p>无限增殖的变异细胞群，能释放高密度的细胞因子风暴。</p></div>
+                </div>
+                <div class="gallery-card">
+                    <img src="images/image_19.png" alt="Bullet">
+                    <div class="gallery-info"><h4>特异性抗体 (弹药库)</h4><p>针对抗原特异性结合的生化武器，发射需消耗大量 ATP。</p></div>
+                </div>
+            </div>
+            <div style="text-align: center;"><button class="btn-menu" onclick="closeScreen('galleryScreen')">返回终端</button></div>
+        </div>
+    </div>
+
+    <div id="quizScreen" class="overlay" style="display: none; background: rgba(0,0,0,0.65);">
+        <div class="quiz-modal">
+            <h2 style="color: #ff4d6d; margin-top: 0; font-size: 1.5rem;">🚨 ATP 能量枯竭</h2>
+            <p style="color: #888; font-size: 0.9rem;">系统已强制暂停。请解析以下高级细胞生物学通路以重置 ATP：</p>
+            <div id="questionText">获取题目中...</div>
+            <div id="optionsGroup"></div>
+        </div>
+    </div>
+
+    <div class="main-layout" id="gameUI" style="opacity: 0;">
+        <div class="status-bar">
+            <div class="hp-hearts" id="hpDisplay">❤️❤️❤️</div>
+            <div class="atp-container" id="atpBox">
+                <div class="atp-bar" id="atpBar"></div>
+            </div>
+            <div id="scoreDisplay" style="font-weight: 800; color: var(--secondary); font-size: 1.1rem; width: 60px; text-align: right;">0</div>
+        </div>
+        <div class="game-container">
+            <canvas id="gameStage" width="600" height="800"></canvas>
+            <div id="spellAlert" style="position: absolute; top: 35%; width: 100%; text-align: center; color: var(--secondary); font-weight: 900; font-size: 1.8rem; text-shadow: 0 4px 10px #fff; pointer-events: none; opacity: 0; transition: opacity 0.5s;"></div>
+        </div>
+    </div>
+
+<script>
+    // 🎨 游戏引擎里的图片路径也全部加上了 images/ 
+    const assets = { player: new Image(), enemyNormal: new Image(), enemyBoss: new Image(), bullet: new Image() };
+    assets.player.src = 'images/image_16.png';       
+    assets.enemyNormal.src = 'images/image_17.png';  
+    assets.enemyBoss.src = 'images/image_18.png';   
+    assets.bullet.src = 'images/image_19.png';       
+
+    const canvas = document.getElementById('gameStage');
+    const ctx = canvas.getContext('2d');
+    
+    let gameState = 'MENU'; 
+    let hp = 3; let score = 0; 
+    let playerAtp = 100; const MAX_ATP = 100; 
+    
+    let lastTime = performance.now(); let fireTimer = 0; let spawnTimer = 0; let globalTime = 0;
+    
+    const player = { x: 300, y: 700, hitRadius: 4, grazeRadius: 45, speed: 500 }; 
+    let boss = { active: false, x: 300, y: -100, hp: 800, maxHp: 800, state: 'waiting', phase: 1, phaseTimer: 0 };
+    
+    let bullets = []; let enemyBullets = []; let enemies = []; let particles = [];
+    let activeSpell = null; let spellTimer = 0; let screenShake = 0;
+
+    let touchActive = false; 
+    let targetX = player.x; let targetY = player.y;
+    
+    function updateTouchTarget(e) {
+        if(gameState !== 'PLAYING') return;
+        e.preventDefault(); 
+        touchActive = true; 
+        let rect = canvas.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        targetX = (clientX - rect.left) * (canvas.width / rect.width);
+        targetY = (clientY - rect.top) * (canvas.height / rect.height);
+    }
+    canvas.addEventListener('touchmove', updateTouchTarget, {passive: false});
+    canvas.addEventListener('mousemove', updateTouchTarget);
+
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    window.addEventListener('keydown', e => { 
+        if(keys.hasOwnProperty(e.key)) { keys[e.key] = true; touchActive = false; }
+    });
+    window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+    function openScreen(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeScreen(id) { document.getElementById(id).style.display = 'none'; }
+    
+    function showBriefing() { 
+        document.getElementById('startScreen').style.display = 'none'; 
+        document.getElementById('introBriefing').style.display = 'flex';
+    }
+
+    function startActualGame() {
+        document.getElementById('introBriefing').style.display = 'none';
+        document.getElementById('gameUI').style.opacity = '1';
+        hp = 3; score = 0; playerAtp = 100;
+        document.getElementById('hpDisplay').innerText = '❤️❤️❤️';
+        updateScore(0);
+        availableQuestions = [...quizBank];
+        gameState = 'PLAYING'; lastTime = performance.now();
+        requestAnimationFrame(gameLoop); 
+    }
+
+    function update(dt) {
+        if (gameState !== 'PLAYING') return;
+
+        globalTime += dt;
+        if (spellTimer > 0) {
+            spellTimer -= dt;
+            if (spellTimer <= 0) { activeSpell = null; }
+        }
+        if (screenShake > 0) screenShake -= dt * 20;
+
+        if (touchActive) {
+            player.x += (targetX - player.x) * 15 * dt; 
+            player.y += (targetY - player.y) * 15 * dt;
+        } else {
+            let dx = 0, dy = 0;
+            if (keys.w || keys.ArrowUp) dy -= 1;
+            if (keys.s || keys.ArrowDown) dy += 1;
+            if (keys.a || keys.ArrowLeft) dx -= 1;
+            if (keys.d || keys.ArrowRight) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                let length = Math.hypot(dx, dy);
+                player.x += (dx / length) * player.speed * dt;
+                player.y += (dy / length) * player.speed * dt;
+            }
+        }
+        player.x = Math.max(50, Math.min(canvas.width - 50, player.x));
+        player.y = Math.max(50, Math.min(canvas.height - 50, player.y));
+
+        fireTimer += dt;
+        let fireRate = activeSpell === 'mitochondria' ? 0.05 : 0.15; 
+        
+        if (fireTimer > fireRate) {
+            if (playerAtp > 0) {
+                if (activeSpell === 'golgi') {
+                    for(let i=-2; i<=2; i++) bullets.push({x: player.x, y: player.y, vx: i*90, vy: -600});
+                } else {
+                    bullets.push({x: player.x - 20, y: player.y, vx: 0, vy: -600});
+                    bullets.push({x: player.x + 20, y: player.y, vx: 0, vy: -600});
+                }
+                if(!activeSpell) playerAtp -= 3; 
+            }
+            fireTimer = 0;
+        }
+
+        if (playerAtp <= 0 && gameState === 'PLAYING') {
+            playerAtp = 0; triggerFullScreenQuiz();
+        }
+
+        let atpPercent = (playerAtp / MAX_ATP) * 100;
+        document.getElementById('atpBar').style.width = atpPercent + '%';
+
+        if (score >= 1000 && !boss.active) { boss.active = true; boss.state = 'entering'; enemies = []; }
+
+        if (boss.active) {
+            boss.phaseTimer += dt;
+            if (boss.state === 'entering') {
+                boss.y += 60 * dt; if (boss.y > 180) { boss.state = 'fighting'; boss.phase = 1; }
+            } else if (boss.state === 'fighting') {
+                boss.x = 300 + Math.sin(globalTime) * 130; boss.y = 180 + Math.cos(globalTime * 1.5) * 40;
+                
+                if (boss.phaseTimer > 0.1) {
+                    let angle1 = globalTime * 3; let angle2 = globalTime * 3 + Math.PI;
+                    enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle1)*280, vy: Math.sin(angle1)*280, isRed: false});
+                    enemyBullets.push({x: boss.x, y: boss.y, vx: Math.cos(angle2)*280, vy: Math.sin(angle2)*280, isRed: false});
+                    boss.phaseTimer = 0;
+                }
+            }
+        } else {
+            spawnTimer += dt;
+            if (spawnTimer > 1.0) {
+                enemies.push({ x: Math.random() * (canvas.width - 100) + 50, y: -50, radius: 35, vy: Math.random() * 50 + 100, hp: 2 });
+                spawnTimer = 0;
+            }
+        }
+
+        bullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; });
+        bullets = bullets.filter(b => b.y > -20 && b.x > -20 && b.x < canvas.width + 20);
+
+        enemyBullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; });
+        enemyBullets = enemyBullets.filter(b => b.y < canvas.height + 20 && b.x > -20 && b.x < canvas.width + 20);
+
+        enemies.forEach(e => e.y += e.vy * dt);
+        enemies = enemies.filter(e => e.y < canvas.height + 60);
+        
+        particles.forEach(p => { p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.alpha -= dt * 2; });
+        particles = particles.filter(p => p.alpha > 0);
+
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            let b = bullets[j]; let hit = false;
+            if (boss.active && boss.state === 'fighting' && Math.hypot(boss.x - b.x, boss.y - b.y) < 90) {
+                boss.hp--; bullets.splice(j, 1); hit = true; createExplosion(b.x, b.y, '#4ecdc4', 2);
+                if (boss.hp <= 0) { gameState = 'GAMEOVER'; winGame(); }
+            }
+            if(hit) continue;
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 15) {
+                    e.hp--; bullets.splice(j, 1); hit = true; createExplosion(b.x, b.y, '#4ecdc4', 2);
+                    if(e.hp <= 0) { enemies.splice(i, 1); createExplosion(e.x, e.y, '#ff85a2', 6); updateScore(50); }
+                    break;
+                }
+            }
+        }
+
+        function checkHit(ex, ey, er) {
+            let distToPlayer = Math.hypot(ex - player.x, ey - player.y);
+            if (activeSpell === 'er') return false; 
+            if (distToPlayer < er + player.hitRadius) {
+                hp--; document.getElementById('hpDisplay').innerText = '❤️'.repeat(Math.max(0,hp)) + '🖤'.repeat(3-hp);
+                createExplosion(player.x, player.y, '#ff4d6d', 20); screenShake = 8;
+                if (hp <= 0) { gameState = 'GAMEOVER'; loseGame(); }
+                return true; 
+            }
+            return false;
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) { if (checkHit(enemies[i].x, enemies[i].y, enemies[i].radius)) enemies.splice(i, 1); }
+        for (let i = enemyBullets.length - 1; i >= 0; i--) { if (checkHit(enemyBullets[i].x, enemyBullets[i].y, 6)) enemyBullets.splice(i, 1); }
+    }
+
+    function draw() {
+        ctx.save();
+        ctx.imageSmoothingEnabled = false; 
+        if (screenShake > 0) ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+
+        ctx.fillStyle = '#fff0f5'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(255, 133, 162, 0.15)'; ctx.lineWidth = 2;
+        let offsetY = (globalTime * 20) % 60;
+        for(let i=0; i<canvas.width; i+=60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+        for(let i=0; i<canvas.height; i+=60) { ctx.beginPath(); ctx.moveTo(0, i+offsetY); ctx.lineTo(canvas.width, i+offsetY); ctx.stroke(); }
+
+        particles.forEach(p => {
+            ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        if (assets.player.complete && assets.player.naturalWidth) {
+            ctx.drawImage(assets.player, player.x - 120, player.y - 120, 240, 240);
+        }
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI*2); 
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.fill();
+
+        enemies.forEach(e => {
+            if (assets.enemyNormal.complete && assets.enemyNormal.naturalWidth) {
+                ctx.drawImage(assets.enemyNormal, e.x - 80, e.y - 80, 160, 160);
+            }
+        });
+        
+        bullets.forEach(b => {
+            if (assets.bullet.complete && assets.bullet.naturalWidth) {
+                ctx.drawImage(assets.bullet, b.x - 24, b.y - 24, 48, 48);
+            }
+        });
+        
+        if (boss.active) {
+            if (assets.enemyBoss.complete && assets.enemyBoss.naturalWidth) {
+                ctx.drawImage(assets.enemyBoss, boss.x - 160, boss.y - 160, 320, 320);
+            }
+            ctx.fillStyle = 'rgba(255,133,162,0.3)'; ctx.fillRect(boss.x - 60, boss.y - 150, 120, 8);
+            ctx.fillStyle = '#ff4d6d'; ctx.fillRect(boss.x - 60, boss.y - 150, 120 * (boss.hp/boss.maxHp), 8);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(boss.x - 60, boss.y - 150, 120, 8);
+        }
+
+        enemyBullets.forEach(b => {
+            ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2);
+            ctx.fillStyle = '#ff4d6d'; ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        });
+
+        if(gameState === 'QUIZ_PAUSE') {
+            ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(0,0,canvas.width, canvas.height);
+        }
+
+        ctx.restore();
+    }
+
+    function createExplosion(x, y, color, count) {
+        for(let k=0; k<count; k++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, size: Math.random()*4+2, alpha: 1, color: color });
+    }
+    
+    function updateScore(pts) { score += pts; document.getElementById('scoreDisplay').innerText = score; }
+
+    function gameLoop(timestamp) {
+        let dt = (timestamp - lastTime) / 1000; if (dt > 0.05) dt = 0.05; 
+        lastTime = timestamp; update(dt); draw();
+        requestAnimationFrame(gameLoop); 
+    }
+
+    const spellCards = [
+        { id: 'golgi', name: '🌸 高尔基体·散花', duration: 6, action: () => {} },
+        { id: 'lysosome', name: '💦 溶酶体·大扫除', duration: 2, action: () => { enemies.forEach(e => createExplosion(e.x, e.y, '#4ecdc4', 15)); enemies = []; enemyBullets = []; screenShake=8; } }
+    ];
+
+    const quizBank = [
+        { q: "介导细胞内囊泡与靶膜准确融合的特异性跨膜蛋白复合体是？", ans: "SNARE蛋白", options: ["SNARE蛋白", "网格蛋白 (Clathrin)", "COP I / COP II"] },
+        { q: "细胞凋亡途径中，由线粒体释放至胞质，诱导凋亡小体形成的关键物质是？", ans: "细胞色素c", options: ["细胞色素c", "穿孔素", "钙离子"] },
+        { q: "粗面内质网上，负责识别新生肽链的信号序列并引导核糖体结合到内质网膜上的复合物是？", ans: "SRP (信号识别颗粒)", options: ["SRP (信号识别颗粒)", "泛素连接酶", "分子伴侣"] },
+        { q: "驱动细胞内物质沿着微管向负端（中心体方向）运输的马达蛋白是？", ans: "动力蛋白 (Dynein)", options: ["动力蛋白 (Dynein)", "驱动蛋白 (Kinesin)", "肌球蛋白 (Myosin)"] },
+        { q: "在 G蛋白偶联受体（GPCR）介导的信号通路中，能特异性促进内质网释放钙离子的第二信使是？", ans: "IP3 (三磷酸肌醇)", options: ["IP3 (三磷酸肌醇)", "cAMP", "DAG (二脂酰甘油)"] },
+        { q: "能够特异性识别并降解被泛素化标记的靶蛋白的细胞内大分子复合体是？", ans: "蛋白酶体 (Proteasome)", options: ["蛋白酶体 (Proteasome)", "溶酶体", "自噬小体"] },
+        { q: "细胞周期中，催化细胞从 G2 期进入 M 期的关键激酶复合体是？", ans: "MPF (成熟促进因子)", options: ["MPF (成熟促进因子)", "APC/C复合物", "p53蛋白"] },
+        { q: "在有丝分裂后期，负责切断姐妹染色单体间黏连蛋白，使染色体得以分离的酶是？", ans: "分离酶 (Separase)", options: ["分离酶 (Separase)", "DNA解旋酶", "端粒酶"] },
+        { q: "介导内质网向高尔基体进行顺向转运（Anterograde transport）的囊泡包被蛋白是？", ans: "COP II", options: ["COP II", "COP I", "网格蛋白 (Clathrin)"] },
+        { q: "真核细胞中，具有极性且呈现『踏车行为』（Treadmilling）的细胞骨架是？", ans: "微管和微丝", options: ["微管和微丝", "仅中间纤维", "细胞外基质"] }
+    ];
+
+    let availableQuestions = [];
+
+    function triggerFullScreenQuiz() {
+        gameState = 'QUIZ_PAUSE'; 
+        document.getElementById('quizScreen').style.display = 'flex';
+        
+        if (availableQuestions.length === 0) { availableQuestions = [...quizBank]; }
+        
+        let qIndex = Math.floor(Math.random() * availableQuestions.length);
+        let data = availableQuestions.splice(qIndex, 1)[0];
+        
+        document.getElementById('questionText').innerHTML = data.q;
+        
+        let optDiv = document.getElementById('optionsGroup'); optDiv.innerHTML = '';
+        data.options.sort(() => Math.random() - 0.5).forEach(opt => {
+            optDiv.innerHTML += `<label class="option-label" onclick="checkAnswer('${opt}', '${data.ans}')"><input type="radio" name="ans"> <strong>${opt}</strong></label>`;
+        });
+    }
+
+    function checkAnswer(selected, correct) {
+        if(selected === correct) {
+            playerAtp = MAX_ATP; 
+            document.getElementById('quizScreen').style.display = 'none';
+            gameState = 'PLAYING'; lastTime = performance.now(); 
+            
+            let spell = spellCards[Math.floor(Math.random() * spellCards.length)];
+            activeSpell = spell.id; spellTimer = spell.duration; spell.action();
+            
+            let alertEl = document.getElementById('spellAlert');
+            alertEl.innerText = spell.name; alertEl.style.opacity = '1';
+            setTimeout(() => { alertEl.style.opacity = '0'; }, 2000);
+            
+        } else {
+            hp--; document.getElementById('hpDisplay').innerText = '❤️'.repeat(Math.max(0,hp)) + '🖤'.repeat(3-hp);
+            if (hp <= 0) {
+                document.getElementById('quizScreen').style.display = 'none';
+                gameState = 'GAMEOVER'; loseGame();
+            } else {
+                document.getElementById('questionText').innerHTML = `<span style="color:#ff4d6d;">❌ 错误！细胞膜受损！<br>请重新选择！提示：${correct.substring(0,2)}...</span>`;
+                let labels = document.getElementById('optionsGroup').getElementsByClassName('option-label');
+                for(let l of labels) l.style.border = '2px solid #ff4d6d';
+            }
+        }
+    }
+
+    function loseGame() {
+        document.getElementById('startScreen').style.display = 'flex';
+        document.querySelector('#startScreen h1').innerHTML = `微观防线<br><span style="font-size: 1.2rem; color: #ff4d6d; letter-spacing: 4px;">MISSION FAILED</span>`;
+    }
+    function winGame() {
+        document.getElementById('startScreen').style.display = 'flex';
+        document.querySelector('#startScreen h1').innerHTML = `微观防线<br><span style="font-size: 1.2rem; color: #4ecdc4; letter-spacing: 4px;">CLEAR!</span>`;
+    }
+</script>
+</body>
+</html>
